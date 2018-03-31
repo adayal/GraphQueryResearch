@@ -14,5 +14,11 @@ export default class Graph {
 		});
 	*/
 	}
+	
+	static findTypeObject(callback) {
+
+	}
+
+	static addPredicate(objectName, predicateName, lol, callback)	{}
 
 }

@@ -8,8 +8,10 @@
  *
  */
 
-var config = require("../../config")
-var db = config.getDatabaseConnection();
+//var config = require("../../config")
+var neo4j = require('neo4j-driver').v1;
+//var db = config.getDatabaseConnection();
+var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
 
 export default class Participant {
 	constructor() {
@@ -17,20 +19,20 @@ export default class Participant {
 	}
 	
 	static fetchParticipantDetails(participantID, callback) {
-		db.cypher({
-				query: 'MATCH (n: PROFILE{uid: "{uid}"}) RETURN n',
-				params: {
-					uid: participantID
-				}
-			}, 
-			function (err, results) {
-				if (err) {
-					callback(err, null)
-				} else {
-					callback(null, results);
-				}
-			}
-		);
+		let session = db.session();
+		let resultPromise = session.readTransaction(function(transaction) {
+			 let result =  transaction.run('MATCH (n:PROFILE {uid : {uidParam} }) RETURN n', {uidParam: neo4j.int(participantID)})
+			 return result;
+		});
+		resultPromise.then(function(result) {
+			session.close();
+			console.log(result.records);
+			callback(null, result.records);
+		}).catch(function(result) {
+			session.close();
+			console.log(result.error);
+			callback(result.error, null)
+		});
 	}
 
 	/**
@@ -43,16 +45,20 @@ export default class Participant {
  	*
  	*/
 	static fetchAllParticipants(callback) {
-		db.cypher({
-				query: 'MATCH (n: PROFILE) RETURN n'
-			}, 
-			function (err, results) {
-				if (err) {
-					callback(err, null)
-				} else {
-					callback(null, results);
-				}
-			}
-		);
+		let session = db.session();
+		let resultPromise = session.readTransaction(function(transaction) {
+			 return transaction.run('MATCH (n:PROFILE) RETURN n')
+		});
+		
+		resultPromise.then(function(result) {
+			session.close();
+			callback(null, result.records);
+		}).catch(function(error) {
+			session.close();
+			console.log(result.error);
+			callback(result.error, null)
+		});
+	
+
 	}
 }
