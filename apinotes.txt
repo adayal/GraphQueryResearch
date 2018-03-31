@@ -1,0 +1,5 @@
+API 1:
+	Categorical variable: [gender, ..]
+	Type of activity: /post, /comment, /likes
+	Return number of given activity per categorical variable
+		- For example, gender would be 2 columns
