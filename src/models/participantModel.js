@@ -8,9 +8,7 @@
  *
  */
 
-//var config = require("../../config")
 var neo4j = require('neo4j-driver').v1;
-//var db = config.getDatabaseConnection();
 var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
 
 export default class Participant {

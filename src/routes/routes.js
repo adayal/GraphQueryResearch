@@ -6,5 +6,6 @@ module.exports = function(app) {
 	app.route('/participant').get(participantController.fetchAllParticipants)
 	app.route('/view_graph').get(graphController.fetchGraph)
 	app.route('/participant/:id').get(participantController.getByParticipantId)
+	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
 	//app.route('/graph/add/predicate').post(graphController.addPredicate)
 }
