@@ -5,6 +5,8 @@ module.exports = function(app) {
 	var graphController = require('../controllers/graphController');
 	app.route('/:graphNAME/participant').get(participantController.fetchAllParticipants)
 	app.route('/view_graph').get(graphController.fetchGraph)
+	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
+	app.route('/graph/describe').get(graphController.fetchSchema)
 	app.route('/:graphNAME/participant/:id').get(participantController.getByParticipantId)
 	//app.route('/graph/add/predicate').post(graphController.addPredicate)
 }
