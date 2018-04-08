@@ -3,3 +3,37 @@ API 1:
 	Type of activity: /post, /comment, /likes
 	Return number of given activity per categorical variable
 		- For example, gender would be 2 columns
+
+
+
+
+/graph/schema --> label, Predicate, Object
+/view/log
+/:network/view/graph
+	/e1r1_lattice/view/graph
+/:network/view/participant/{id}
+/:network/view/engagement/:type
+	/e1r1/view/engagement/post
+/:network/compare/:labelname/:EType (within networks)
+	/e1r1_lattice/compare/male/post
+/compare/:network1/:network2/:labelName{/all}/:EType (across)
+	/compare/e1r1_lattice/e1r1_smallWorld/male/post 
+	
+--------------- (Developer)
+
+
+/graph/write/property (literal only)
+	-node id, propertyKey, value (propertyValue {literal})  Node1.name = prashant
+/graph/write/relationship
+	-node id 1, node id 2, relationship, direction
+/graph/write/label (creating node type)
+	-label name 
+---------------- 
+(later) /graph/write/import
+	CSV
+
+
+
+Focus on:
+	 write part	
+

@@ -38,15 +38,67 @@ export default class Graph {
 
 	static getRegexForEngagementType(type) {
 		if (type == 'share') 
-			return '.*\\[share author=.*'
+			return '.*\\\\[share author=.*'
 		else if (type == 'assessment')
-			return 'I am taking the \\[bookmark=.*'
+			return 'I am taking the \\\\[bookmark=.*'
 		else if (type == 'stories')
 			return 'Please read the story.*'
 		else if (type == 'likes')
-			return '.*\\[/url\\] likes \\[url.*'
+			return '.*\\\\[/url\\\\] likes \\\\[url.*'
 		else
 			return null
+	}
+	
+	/* 
+ 	* endpoint for /graph/schema
+	* @param callback (func) callback function
+	* @format err,success
+	* @return {labels: [" "], predicates: [{name: "", type: "literal"], objects: [" "]}
+	*
+	* {label: "ACCOUNT"
+	* 	predicate: {id: "literal", date: "literal"} }
+	*
+	*
+	* 1. Get all Labels
+	* 2. For each label, list all properties
+	* 3. For each label, list all relationships with Object
+	* Formatting
+	* {[{label: "PROFILE", predicates: [{prop:"literal"},...{rel:"label"}]},...]
+	*
+	*
+	*/
+	static describeGraph(callback) {
+		let session = db.session()
+		let resultPromise = session.readTransaction(function(transaction) {
+			let result = transaction.run('CALL db.schema()')
+			return result
+		});
+		
+		resultPromise.then(function(result) {
+			session.close()
+			callback(null, result)
+				
+		}).catch(function(result) {
+			session.close()
+			callback("error: " + result, null)
+		});	
+	}
+
+	static describeLabel(labelName, callback) {
+		let session = db.session()
+		let resultPromise = session.readTransaction(function(transaction) {
+			let result = transaction.run('MATCH(a:' + labelName + ') RETURN keys(a) LIMIT 1')
+			return result
+		});
+		
+		resultPromise.then(function(result) {
+			session.close()
+			callback(null, result)
+				
+		}).catch(function(result) {
+			session.close()
+			callback("error: " + result, null)
+		});
 	}
 
 	/*
@@ -62,27 +114,21 @@ export default class Graph {
 				
 				//Arrow function preserves 'this'
 				let resultPromise = session.readTransaction((transaction) => {
-					let regexParam = this.getRegexForEngagementType(engagementType);
-					if (!regexParam) {
+					let regex = this.getRegexForEngagementType(engagementType);
+					if (!regex) {
 						return null;
 					}
 					//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
-					let result = transaction.run('MATCH (n{labelNameParam}) WHERE n{propertyNameParam} =~ \'{regexParam}\' RETURN n.id', {labelNameParam: ':' + labelName, propertyNameParam: '.' + propertySearch, regexParam: regexParam});
-					//console.log(result)
+					//unsafe but only exposed to developers 
+					let result = transaction.run("MATCH (n:" + labelName + ") WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN n.id");
 					return result;
 				});
 				resultPromise.then(function(result) {
-					session.close();	
-					/**
- 					* Do data processing here
- 					*
- 					*/
-					console.log(result)
-					callback(null, result);
-				}).catch(function(result) {
 					session.close();
-					console.log(result);
-					callback(result, null);
+					callback(null, result);
+				}).catch(function(err) {
+					session.close();
+					callback(err, null);
 				});	
 			} else {
 				callback("your property does not exist", null);	
@@ -95,11 +141,17 @@ export default class Graph {
  	* Create a new property for a node given the nodeIDs, propertyName and the propertyValue
  	* This function does not care what other properties are being stored (e.g. duplicated data might occur).
  	* This function will be done in commits to make sure we can rollback if necessary
- 	*/  	
+ 	 new params subject predicate object
+	*/  	
 	static createNewProperty(nodeIDs, propertyName, propertyValue) {
-
+		
 	}
 
+	/*
+ 	* 1. Get all Node ids and associated type
+ 	* 2. Create new label (node) --> URI (associated with propertyValue)
+ 	* 3. MATCH (n id), (f: new label) --> create a link between n:[propertValue]->f
+ 	*/
 
 	/**
  	* Add a predicate to the graph
