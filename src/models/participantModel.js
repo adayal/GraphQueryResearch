@@ -18,10 +18,10 @@ export default class Participant {
 	
 	}
 	
-	static fetchParticipantDetails(participantID, callback) {
+	static fetchParticipantDetails(graphNAME, participantID, callback) {
 		let session = db.session();
 		let resultPromise = session.readTransaction(function(transaction) {
-			 let result =  transaction.run('MATCH (n:PROFILE {uid : {uidParam} }) RETURN n', {uidParam: neo4j.int(participantID)})
+			 let result =  transaction.run('MATCH (n:PROFILE)-[:PART_OF]-(Network) where Network.name = {graphName} AND n.uid = {uidParam} RETURN n', {graphName: graphNAME,  uidParam: neo4j.int(participantID)})
 			 return result;
 		});
 		resultPromise.then(function(result) {
@@ -44,10 +44,10 @@ export default class Participant {
  	* format: callback(error, result)
  	*
  	*/
-	static fetchAllParticipants(callback) {
+	static fetchAllParticipants(graphNAME,callback) {
 		let session = db.session();
 		let resultPromise = session.readTransaction(function(transaction) {
-			 return transaction.run('MATCH (n:PROFILE) RETURN n')
+			 return transaction.run('MATCH (n:PROFILE)-[:PART_OF]-(Network) where Network.name = {graphName} return n', {graphName: graphNAME})
 		});
 		
 		resultPromise.then(function(result) {

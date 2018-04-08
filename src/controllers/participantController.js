@@ -3,13 +3,13 @@ import Participant from "../models/participantModel"
 
 
 exports.fetchAllParticipants = function(req, res) {
-	Participant.fetchAllParticipants(function(err, participantArray) {
+	Participant.fetchAllParticipants(req.params.graphNAME,function(err, participantArray) {
 		res.send(JSON.stringify(participantArray));
 	});
 }
 
 exports.getByParticipantId = function(req, res) {
-	Participant.fetchParticipantDetails(req.params.id, function(err, participant) {
+	Participant.fetchParticipantDetails(req.params.graphNAME,req.params.id, function(err, participant) {
 		if (err) {
 			res.send(err)
 		}
