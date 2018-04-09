@@ -118,12 +118,19 @@ export default class Graph {
 					if (!regex) {
 						return null;
 					}
+					let result = null
+					//share engagement type has an error with the regex provided
+					if (engagementType == "share") {
+						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return n.id")	
+					} else {
 					//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
 					//unsafe but only exposed to developers 
-					let result = transaction.run("MATCH (n:" + labelName + ") WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN n.id");
+						result = transaction.run("MATCH (n:" + labelName + ") WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN n.id");
+					}
 					return result;
 				});
 				resultPromise.then(function(result) {
+					//console.log(result)
 					session.close();
 					callback(null, result);
 				}).catch(function(err) {
@@ -143,8 +150,91 @@ export default class Graph {
  	* This function will be done in commits to make sure we can rollback if necessary
  	 new params subject predicate object
 	*/  	
-	static createNewProperty(nodeIDs, propertyName, propertyValue) {
-		
+	static createNewProperty(nodeID, propertyName, propertyValue, callback) {
+		let session = db.session();
+		let resultPromise = session.readTransaction((transaction) => {
+			let result = transaction.run("MATCH (n) WHERE ID(n) = {id} SET n." + propertyName +" = {value}", {id: nodeID, value: propertyValue})
+			return result
+		})
+		resultPromise.then(function(result) {
+			session.close();
+			callback(null, result);
+		}).catch(function(err) {
+			session.close();
+			callback(err, null);
+		})	
+	}
+
+	/*
+ 	* Create a new label in the graph
+ 	* Cannot create pre-existing label, so first check
+ 	*
+ 	*/
+	static createNewLabel(labelName, callback) {
+		this.doesTypeObjectExist(labelName, function(bool, list) {
+			if (!bool) {
+				let session = db.session()
+				let resultPromise = session.readTransaction((transaction) => {
+					let result = transaction.run("CREATE (n:" + labelName + ")");
+					return result
+				})
+				resultPromise.then(function(result) {
+					session.close()
+					callback(null, result)
+				}).catch(function(err) {
+					session.close()
+					callback(err)
+				})
+			} else {
+				callback("error: label name already exists", null)
+			}
+		}) 	
+	}
+
+	/*
+ 	* Create a new relationship between two groups of nodes
+ 	* LabelName 1 <-- relName --> LabelName 2
+ 	* Options:
+ 	* 	Unidirectional, provide the originating node
+ 	* 	Bidirection: default option
+ 	* 	labelName1 match: match specific node(s) from label 1
+ 	* 	labelName2 match: match specific node(s) from label 2
+ 	* 	relationshipName: name of relationship
+ 	*/
+
+	static createNewRelationship(labelName1, labelName2, options, callback) {
+		this.doesTypeObjectExist(labelName1, (bool, list) => {
+			if (bool) {
+				this.doesTypeObjectExist(labelName2, (bool, list) => {
+					if (bool) {
+						let bi = true;
+						if (options) {
+							bi = !options.unidirectonal
+							if (bi) {
+								if (match1 && match2) {
+
+								} else if (match1) {
+
+								} else if (match2) {
+
+								} else {
+									//do not specify
+								}
+							//not bidirectional
+							} else {
+
+							}	
+						} else {
+							//throw error, options must be there
+						}
+					} else {
+						//throw error
+					}
+				})
+			} else {
+				//throw error
+			}
+		})
 	}
 
 	/*

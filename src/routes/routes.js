@@ -8,5 +8,7 @@ module.exports = function(app) {
 	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
 	app.route('/graph/describe').get(graphController.fetchSchema)
 	app.route('/:graphNAME/participant/:id').get(participantController.getByParticipantId)
+	app.route('/graph/addProperty').post(graphController.createNewProperty)
+	app.route('/graph/addLabel').get(graphController.createNewLabel)
 	//app.route('/graph/add/predicate').post(graphController.addPredicate)
 }

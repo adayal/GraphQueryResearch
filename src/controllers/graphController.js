@@ -11,9 +11,55 @@ exports.fetchGraph = function(req, res) {
 exports.findPropertyValue = function(req, res) {
 	
 	Graph.findPropertyValue(req.query.labelName, req.query.propertyName, req.query.engagementType, req.query.propertyValue, function(err, result) {
-		res.send(result);
+		if (err) {
+			console.log(err)
+			res.send(err)
+		} else {
+			let records = result.records
+			let obj = {}
+			let response = []
+			for (let i = 0; i < records.length; i++) {
+				response.push(records[i]._fields[0])
+			}
+			obj.nodeIds = response
+			obj.propertyName = "engagementType"
+			obj.propertyvalue = req.query.propertyValue
+			res.send(obj);
+		}
 	});
-}	
+}
+
+exports.createNewLabel = function(req, res) {
+	Graph.createNewLabel(req.query.labelName, function(err, result) {
+		if (err) {
+			console.log(err)
+			res.send(err)
+		} else {	
+			res.send(result)
+		}
+	})
+}
+
+exports.createNewProperty = function(req, res) {
+	let nodeIDs = req.body.nodeIDs
+	let propertyName = req.body.propertyName
+	let propertyValue = req.body.propertyValue
+	for (let i = 0; i < nodeIDs.length; i++) {
+		Graph.createNewProperty(nodeIDs[i], propertyName, propertyValue, function(err, result) {
+			if (err) {
+				console.log(err)
+				res.send(err)
+				return
+			}
+			if (i == (nodeIDs.length - 1)) {
+				console.log(result)
+				res.send(result)
+			}
+		})
+	}
+}
+
+	
 exports.fetchSchema = function(req, res) {
 	Graph.describeGraph(function(err, result) {
 		/**
