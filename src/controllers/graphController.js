@@ -1,10 +1,12 @@
 'use strict';
-//var graph = require("../models/graphModel");
+
 import Graph from "../models/graphModel"
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
 const fs = require('fs')
 const path = require('path')
+const {spawn} = require('child_process')
+const exec = require('child_process').exec
 
 exports.fetchGraph = function(req, res) {
 	Graph.fetchGraph(function(err, graphArray) {
@@ -115,34 +117,39 @@ exports.createNewRelationship = function(req, res) {
 			lineNum++
 			
 		}).on('done', (error)=> {
-			//@todo: delete temp file
-			
+			fs.unlink(csvFilePath, function(err) {
+				if (err) {
+					console.log(err)
+				}
+			})
 			if (error)
 				res.send(error)
 			else {
 				let isSent = false
 				let bulkString = ""
-				//Neo4j hack, not allowed to concat multiple queries but you can with the following
-				//statment 'WITH 1 as dummy'. It essentially creates a gap between then next statement
-				//with a bogus entry
 				for (let i = 0; i < queries.length; i++) {
-					bulkString += queries[i]
-					if (i < queries.length - 1) {
-						bulkString += " WITH 1 AS dummy "
-					}
+					bulkString += queries[i] + ";"
 				}
-				//the query could be huge so this might take some time
-				//current status, 3000 queries causes neo4j to crash
-				Graph.runRawQuery(bulkString, function(err, result) {
-						if (err && !isSent) {
-							isSent = true
-							res.send(err)
-						}
-						if (i == queries.length - 1 && !isSent) {
-							isSent = true
-							res.send(result)
-						}
-				})
+				let randFileName = ""
+				let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				for (var i = 0; i < 10; i++)
+					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
+				
+				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
+				fs.writeFile(absPath, bulkString, function(err) {
+					exec('cypher-shell -u neo4j -p password --format plain < ' + absPath, function(error, stdout, stderr) {
+						console.log(error)
+						console.log(stdout)
+						console.log(stderr)	
+						fs.unlink(absPath, function(err) {
+							if (err) {
+								console.log(err)
+							} else {
+								res.send(true)
+							}
+						})
+					})	
+				})	
 			}
 		})	
 		
