@@ -7,6 +7,8 @@ API 1:
 
 
 
+===============MINIMUM REQS ================
+
 /graph/schema --> label, Predicate, Object
 /view/log
 /:network/view/graph
@@ -31,6 +33,9 @@ API 1:
 ---------------- 
 (later) /graph/write/import
 	CSV
+
+
+Look into Visualization
 
 
 

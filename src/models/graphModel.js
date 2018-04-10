@@ -121,11 +121,11 @@ export default class Graph {
 					let result = null
 					//share engagement type has an error with the regex provided
 					if (engagementType == "share") {
-						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return n.id")	
+						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return ID(n)")	
 					} else {
 					//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
 					//unsafe but only exposed to developers 
-						result = transaction.run("MATCH (n:" + labelName + ") WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN n.id");
+						result = transaction.run("MATCH (n:" + labelName + ") WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN ID(n)");
 					}
 					return result;
 				});
@@ -192,47 +192,75 @@ export default class Graph {
 	}
 
 	/*
+	* Run a raw query directly on Neo4j. This does not
+	* do any validating of any kind. Use with caution.
+	*
+	*/
+	static runRawQuery(query, callback) {
+		let session = db.session()
+		let resultPromise = session.readTransaction((transaction) => {
+			return trasaction.run(query)
+		})
+		resultPromise.then(function(result) {
+			session.close()
+			callback(null, result)
+		}).catch(function(err) {
+			session.close()
+			callback(err)
+		})
+	}
+
+	/*
  	* Create a new relationship between two groups of nodes
  	* LabelName 1 <-- relName --> LabelName 2
+ 	* RelationshipName: name of the relationship
  	* Options:
- 	* 	Unidirectional, provide the originating node
- 	* 	Bidirection: default option
+ 	* 	Unidirectional, provide the originating node, default is bidirectional
  	* 	labelName1 match: match specific node(s) from label 1
  	* 	labelName2 match: match specific node(s) from label 2
- 	* 	relationshipName: name of relationship
+ 	*
+ 	* Cannot do bidirection anyways
+ 	* Options will just include the ids for the nodes, no options means match all nodes with the given label (potentially dangerous)
+ 	* MATCH (n:animal), (m:testing) WHERE ID(n) = ? AND ID(m) = ? CREATE (n)-[:WILL_BE]->(m)	
  	*/
-
-	static createNewRelationship(labelName1, labelName2, options, callback) {
+	static createNewRelationship(labelName1, labelName2, relationshipName, options, callback) {
 		this.doesTypeObjectExist(labelName1, (bool, list) => {
 			if (bool) {
 				this.doesTypeObjectExist(labelName2, (bool, list) => {
 					if (bool) {
-						let bi = true;
+						let stmt = "MATCH (n:" + labelName1 + "), (m:" + labelName2 + ") "
 						if (options) {
-							bi = !options.unidirectonal
-							if (bi) {
-								if (match1 && match2) {
-
-								} else if (match1) {
-
-								} else if (match2) {
-
-								} else {
-									//do not specify
+							if (options.match1) {
+								stmt += "WHERE ID(n) = " + options.match1
+								if (options.match2) {
+									stmt += " AND ID(m) = " + options.match2
 								}
-							//not bidirectional
-							} else {
-
-							}	
-						} else {
-							//throw error, options must be there
+							} else if (options.match2) {
+								stmt += "WHERE ID(m) = " + options.match2
+							}
 						}
+						stmt += " CREATE (n)-[:" + relationshipName + "]->(m)"	 
+						console.log(stmt)
+						let session = db.session()
+						let resultPromise = session.readTransaction((transaction) => {
+							let result = transaction.run(stmt);
+							return result
+						})
+						resultPromise.then(function(result) {
+							session.close()
+							callback(null, result)
+						}).catch(function(err) {
+							session.close()
+							callback(err, null)
+						})
+					
+				
 					} else {
-						//throw error
+						//throw error, label not found
 					}
 				})
 			} else {
-				//throw error
+				//throw error, label not found
 			}
 		})
 	}

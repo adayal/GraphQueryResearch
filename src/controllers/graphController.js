@@ -1,6 +1,10 @@
 'use strict';
 //var graph = require("../models/graphModel");
 import Graph from "../models/graphModel"
+const csv = require('csvtojson')
+const json2csv = require('json2csv').Parser
+const fs = require('fs')
+const path = require('path')
 
 exports.fetchGraph = function(req, res) {
 	Graph.fetchGraph(function(err, graphArray) {
@@ -16,15 +20,33 @@ exports.findPropertyValue = function(req, res) {
 			res.send(err)
 		} else {
 			let records = result.records
-			let obj = {}
-			let response = []
+			let fields = ["nodeID"]
+			let nodes = []
 			for (let i = 0; i < records.length; i++) {
-				response.push(records[i]._fields[0])
+				let temp = {}
+				temp["nodeID"] = records[i]._fields[0].low
+				nodes.push(temp) 
 			}
-			obj.nodeIds = response
-			obj.propertyName = "engagementType"
-			obj.propertyvalue = req.query.propertyValue
-			res.send(obj);
+
+			const json2csvParser = new json2csv({fields})
+			const csv = json2csvParser.parse(nodes)	
+			let randFileName = ""
+			let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			for (var i = 0; i < 10; i++)
+				randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
+			fs.writeFile(randFileName + ".csv", csv, function(err) {
+				if (err) {
+					//console.log("error")
+					console.log(err)
+					res.send(csv)
+				} else {
+					let absPath = path.join(__dirname, '../../' + randFileName + '.csv')
+					console.log('sending')
+					res.sendFile(absPath)
+				}
+			})
+			//res.send(csv)
+			
 		}
 	});
 }
@@ -55,6 +77,65 @@ exports.createNewProperty = function(req, res) {
 				console.log(result)
 				res.send(result)
 			}
+		})
+	}
+}
+
+exports.createNewRelationship = function(req, res) {
+	if (req.files.csvImport) {
+		
+		let csvFilePath =  req.files.csvImport.file
+		let lineNum = 0
+		let queries = []
+		let label1 = ""
+		let label2 = ""
+		let relationshipName = ""
+		csv().fromFile(csvFilePath).on('json',(obj)=> {
+			/*
+ 			* IMPORT DATA FROM CSV
+ 			* FIRST LINE HAVE THE HEADERS
+ 			* SECOND LINE ONWARDS HAVE DATA
+ 			* THIS INNER FUNCTION WILL BE CALLED FOR N LINES
+ 			*/
+			if (lineNum == 0) {
+				label1 = obj.label1
+				label2 = obj.label2
+				relationshipName = obj.relationshipName	
+			}
+				
+			let query = "MATCH (n:" + label1 + "), (m:" + label2 + ") WHERE ID(n) = " + obj.match1
+			query += obj.match2 != '' ? " AND ID(m) = " + obj.match2 : ""
+			query += " CREATE (n)-[:" + relationshipName + "]->(m)"
+			queries.push(query)
+			//DO NOT RUN ASYNC QUERY HERE.	
+			lineNum++
+			
+		}).on('done', (error)=> {
+			//delete temp file
+			
+			if (error)
+				res.send(error)
+			else {
+				for (let i = 0; i < queries.length; i++) {
+					console.log(queries[i])
+					/*
+					Graph.runRawQuery(query, function(err, result) {
+						if (err)
+							res.send(err)
+						if (i == queries.length - 1)
+							res.send(result)
+					})
+					*/
+				}
+			}
+		})	
+		
+	} else {
+		Graph.createNewRelationship(req.body.labelName1, req.body.labelName2, req.body.relationshipName, req.body.options, function(err, result) {
+			if (err)
+				res.send(err)
+			else
+				res.send(true)
 		})
 	}
 }
