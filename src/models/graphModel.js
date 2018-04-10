@@ -199,7 +199,7 @@ export default class Graph {
 	static runRawQuery(query, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction((transaction) => {
-			return trasaction.run(query)
+			return transaction.run(query)
 		})
 		resultPromise.then(function(result) {
 			session.close()

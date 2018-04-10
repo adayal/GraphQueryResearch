@@ -36,16 +36,20 @@ exports.findPropertyValue = function(req, res) {
 				randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
 			fs.writeFile(randFileName + ".csv", csv, function(err) {
 				if (err) {
-					//console.log("error")
 					console.log(err)
 					res.send(csv)
 				} else {
 					let absPath = path.join(__dirname, '../../' + randFileName + '.csv')
-					console.log('sending')
-					res.sendFile(absPath)
+					res.sendFile(absPath, {}, function(err) {
+						//delete temp file once send is complete
+						fs.unlink(absPath, function(err) {
+							if (err) {
+								console.log(err)
+							}
+						})	
+					})	
 				}
 			})
-			//res.send(csv)
 			
 		}
 	});
@@ -111,22 +115,34 @@ exports.createNewRelationship = function(req, res) {
 			lineNum++
 			
 		}).on('done', (error)=> {
-			//delete temp file
+			//@todo: delete temp file
 			
 			if (error)
 				res.send(error)
 			else {
+				let isSent = false
+				let bulkString = ""
+				//Neo4j hack, not allowed to concat multiple queries but you can with the following
+				//statment 'WITH 1 as dummy'. It essentially creates a gap between then next statement
+				//with a bogus entry
 				for (let i = 0; i < queries.length; i++) {
-					console.log(queries[i])
-					/*
-					Graph.runRawQuery(query, function(err, result) {
-						if (err)
-							res.send(err)
-						if (i == queries.length - 1)
-							res.send(result)
-					})
-					*/
+					bulkString += queries[i]
+					if (i < queries.length - 1) {
+						bulkString += " WITH 1 AS dummy "
+					}
 				}
+				//the query could be huge so this might take some time
+				//current status, 3000 queries causes neo4j to crash
+				Graph.runRawQuery(bulkString, function(err, result) {
+						if (err && !isSent) {
+							isSent = true
+							res.send(err)
+						}
+						if (i == queries.length - 1 && !isSent) {
+							isSent = true
+							res.send(result)
+						}
+				})
 			}
 		})	
 		
