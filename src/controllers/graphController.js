@@ -14,6 +14,61 @@ exports.fetchGraph = function(req, res) {
 	});
 }
 
+/**
+ * This will find any node based on any part that 'CONTAINS' something
+ * Required: labelName (string)
+ * Optional: contains (string)
+ * Optional: not (boolean)
+ * This function does not allow multiple 'contains'
+ * This function is cross networks
+ * If the 'contains' is not filled in, everything with the label will be grabbed
+ * @return: list of node ids that match the search parameters
+ */
+exports.findNode = function(req, res) {
+	if (!req.body.labelName)
+		res.send("Error, please select label name")
+	else {
+		Graph.findAnyNode(req.body, function(err, result) {
+			if (err) {
+				console.log(err)
+				res.send(err)
+			} else {
+				let records = result.records
+				let fields = ["nodeID"]
+				let nodes = []
+				for (let i = 0; i < records.length; i++) {
+					let temp = {}
+					temp["nodeID"] = records[i]._fields[0].low
+					nodes.push(temp) 
+				}
+				const json2csvParser = new json2csv({fields})
+				const csv = json2csvParser.parse(nodes)
+				let randFileName = ""
+				let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				for (var i = 0; i < 10; i++)
+					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
+				fs.writeFile(randFileName + ".csv", csv, function(err) {
+					if (err) {
+						console.log(err)
+						res.send(csv)
+					} else {
+						let absPath = path.join(__dirname, '../../' + randFileName + '.csv')
+						res.sendFile(absPath, {}, function(err) {
+							//delete temp file once send is complete
+							fs.unlink(absPath, function(err) {
+								if (err) {
+									console.log(err)
+								}
+							})	
+						})	
+					}
+				})
+			}
+		})	
+	}	
+}
+
+
 exports.findPropertyValue = function(req, res) {
 	
 	Graph.findPropertyValue(req.query.labelName, req.query.propertyName, req.query.engagementType, req.query.propertyValue, function(err, result) {

@@ -11,5 +11,6 @@ module.exports = function(app) {
 	app.route('/graph/addProperty').post(graphController.createNewProperty)
 	app.route('/graph/addLabel').get(graphController.createNewLabel)
 	app.route('/graph/addRelationship').post(graphController.createNewRelationship)
+	app.route('/graph/find').post(graphController.findNode)
 	//app.route('/graph/add/predicate').post(graphController.addPredicate)
 }

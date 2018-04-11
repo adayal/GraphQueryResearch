@@ -45,7 +45,7 @@ export default class Graph {
 			return 'Please read the story.*'
 		else if (type == 'likes')
 			return '.*\\\\[/url\\\\] likes \\\\[url.*'
-		else if (type == 'posts')
+		else if (type == 'post')
 			return true
 		else
 			return null
@@ -101,6 +101,44 @@ export default class Graph {
 			session.close()
 			callback("error: " + result, null)
 		});
+	}
+
+	/*
+ 	* This function will find any node that contains a string given the label
+ 	* and will return the id of that node
+ 	* This function takes in an object of parameters and a callback function
+ 	* @param body from the req
+ 	* @param callback (func) to pass back results
+ 	*/
+	static findAnyNode(body, callback) {
+		this.doesTypeObjectExist(body.labelName, function(bool, list) {
+			if (bool) {
+				let session = db.session()
+				let stmt = "MATCH (m:" + body.labelName + ") "
+				if (body.contains) {
+					if (body.not) {
+						stmt += "WHERE (none(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) RETURN ID(m)"
+					} else {
+						stmt += "WHERE (any(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) RETURN ID(m)"
+					}
+				} else {
+					stmt += "RETURN ID(m)"
+				
+				}
+				let resultPromise = session.readTransaction(function(transaction) {
+					return transaction.run(stmt)
+				})
+				resultPromise.then(function(result) {
+					session.close()
+					callback(null, result)
+				}).catch(function(result) {
+					session.close()
+					callback("error: " + result, null)
+				})
+			} else {
+				callback("error: please select a label. List includes the following: " + list, null)
+			}
+		})
 	}
 
 	/*
