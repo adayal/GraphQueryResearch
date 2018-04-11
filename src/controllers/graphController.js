@@ -11,9 +11,25 @@ const exec = require('child_process').exec
 const queryType = 'graph'
 
 
-exports.fetchGraph = function(req, res) {
+exports.fetchGraph = function(req, res) {	
+	let log = {
+		queryType: queryType,
+		developerAPI: false,
+		didModifyGraph: false,
+		request: req.body,
+		timestamp: new Date().getTime()	
+	}
 	Graph.fetchGraph(function(err, graphArray) {
-		res.send(JSON.stringify(graphArray));
+		if (err) {
+			//console.log(err)	
+			logger.writeErrorLog(log, err)
+			res.send(err)
+		} else {
+			log.cypher = graphArray
+			logger.writeLog(log)
+			res.send(JSON.stringify(graphArray));
+		}
+			
 	});
 }
 

@@ -45,7 +45,7 @@ exports.writeLog = function(obj, callback) {
 exports.writeErrorLog = function(obj, error) {
 	obj.errors = error
 	server.getDB(function(db) {
-		db.collection(server.getCollectionname()).insertOne(obj, function(err, res) {
+		db.collection(server.getCollectionName()).insertOne(obj, function(err, res) {
 			if (err) console.log(err)
 		})
 	})
