@@ -3,6 +3,7 @@
 module.exports = function(app) {
 	var participantController = require('../controllers/participantController');
 	var graphController = require('../controllers/graphController');
+	var logController = require('../controllers/logController');
 	app.route('/:graphNAME/participant').get(participantController.fetchAllParticipants)
 	app.route('/view_graph').get(graphController.fetchGraph)
 	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
@@ -12,5 +13,6 @@ module.exports = function(app) {
 	app.route('/graph/addLabel').get(graphController.createNewLabel)
 	app.route('/graph/addRelationship').post(graphController.createNewRelationship)
 	app.route('/graph/find').post(graphController.findNode)
-	//app.route('/graph/add/predicate').post(graphController.addPredicate)
+	app.route('/view/log').get(logController.getAllLogs)
+	
 }
