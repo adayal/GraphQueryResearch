@@ -104,6 +104,7 @@ exports.createNewRelationship = function(req, res) {
  			* THIS INNER FUNCTION WILL BE CALLED FOR N LINES
  			*/
 			if (lineNum == 0) {
+				//console.log(obj)
 				label1 = obj.label1
 				label2 = obj.label2
 				relationshipName = obj.relationshipName	

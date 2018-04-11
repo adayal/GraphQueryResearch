@@ -45,6 +45,8 @@ export default class Graph {
 			return 'Please read the story.*'
 		else if (type == 'likes')
 			return '.*\\\\[/url\\\\] likes \\\\[url.*'
+		else if (type == 'posts')
+			return true
 		else
 			return null
 	}
@@ -122,6 +124,8 @@ export default class Graph {
 					//share engagement type has an error with the regex provided
 					if (engagementType == "share") {
 						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return ID(n)")	
+					} else if (engagementType == "post") {
+						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
 					} else {
 					//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
 					//unsafe but only exposed to developers 
