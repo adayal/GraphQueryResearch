@@ -33,6 +33,16 @@ exports.findNode = function(req, res) {
 				console.log(err)
 				res.send(err)
 			} else {
+				/**
+ 				* Data coming from Neo4j has a peculiar structure
+ 				* Everything is stored in an array called 'records', which is a field
+ 				* So first we get the records 'result.records'
+ 				* For each value of the array, we have a few field that are noteworthy
+ 				* The _fields is a field within each object within the array that contains
+ 				* information about the data in question as well as other information
+ 				* For the case of extracting IDs, we want the 'low' of the first element of the ._fields array
+ 				* So we look for the ._fields[0].low to get the node ids (for this particular case)
+ 				*/
 				let records = result.records
 				let fields = ["nodeID"]
 				let nodes = []
@@ -68,9 +78,13 @@ exports.findNode = function(req, res) {
 	}	
 }
 
-
-exports.findPropertyValue = function(req, res) {
-	
+/*
+ * This only finds properties on a Digital Object
+ * This is more like a helper function and should be
+ * invoked in the code or when a user is specificially searching
+ * for something within the DIGITAL_OBJECT object
+ */
+exports.findPropertyValue = function(req, res) {	
 	Graph.findPropertyValue(req.query.labelName, req.query.propertyName, req.query.engagementType, req.query.propertyValue, function(err, result) {
 		if (err) {
 			console.log(err)
@@ -112,6 +126,11 @@ exports.findPropertyValue = function(req, res) {
 	});
 }
 
+/**
+ * Create a new label
+ * This requires the labelName to be unique
+ *
+ */
 exports.createNewLabel = function(req, res) {
 	Graph.createNewLabel(req.query.labelName, function(err, result) {
 		if (err) {
@@ -123,6 +142,11 @@ exports.createNewLabel = function(req, res) {
 	})
 }
 
+/**
+ * Create new property for a pre-existing node
+ * This adds a literal predicate to an object
+ *
+ */
 exports.createNewProperty = function(req, res) {
 	let nodeIDs = req.body.nodeIDs
 	let propertyName = req.body.propertyName
@@ -142,6 +166,21 @@ exports.createNewProperty = function(req, res) {
 	}
 }
 
+/**
+ * Create new relationship between one-to-one or many-to-one node ids
+ * We can accept either a JSON object for one-to-one queries
+ * Or we can accept a CSV upload in a given format for bulk relationship creating
+ * Format for CSV is as follows:
+ * Headers:	label1, label2, match1, match2, relationshipName
+ * Data:	PROFILE, MALE,  <nodeID>, OPTIONAL, IS_A
+ * Data: 	BLANK,   BLANK	<nodeID>, BLANK,    IS_A
+ *
+ * Where:
+ * OPTIONAL = optional field
+ * BLANK = required to be blank/will be ignored
+ * <nodeID> = id of the node
+ *
+ */
 exports.createNewRelationship = function(req, res) {
 	if (req.files.csvImport) {
 		
@@ -219,7 +258,11 @@ exports.createNewRelationship = function(req, res) {
 	}
 }
 
-	
+/*
+ * Fetches the entire schema and displays information in a JSON
+ * This also descibes the data in a Subject, Object, Predicate format
+ * This also specifies whcih predicates have literals instead of objects
+ */	
 exports.fetchSchema = function(req, res) {
 	Graph.describeGraph(function(err, result) {
 		/**

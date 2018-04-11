@@ -11,6 +11,13 @@ export default class Graph {
 
 	}
 	
+	/*
+ 	* Check if a label exists in the graph
+ 	* This function is dynamic for the data and any new labels created
+ 	* Ths function returns data in a callback in the following format:
+ 	* boolean = true if exists, false otherwise
+ 	* list = list of labels, if and only if boolean is false
+ 	*/
 	static doesTypeObjectExist(objectName, callback) {
 		let session = db.session();
 		let resultPromise = session.readTransaction(function(transaction) {
@@ -36,6 +43,9 @@ export default class Graph {
 		});
 	}
 
+	/**
+	* Data store for regex for each engagement type
+	*/
 	static getRegexForEngagementType(type) {
 		if (type == 'share') 
 			return '.*\\\\[share author=.*'
@@ -86,6 +96,10 @@ export default class Graph {
 		});	
 	}
 
+	/*
+ 	* This function is used get all the properties of a label
+ 	* @TODO check if label actually exists before running
+ 	*/
 	static describeLabel(labelName, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
