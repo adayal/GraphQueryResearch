@@ -1,12 +1,15 @@
 'use strict';
 
 import Graph from "../models/graphModel"
+var logger = require("../controllers/logController.js")
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
 const fs = require('fs')
 const path = require('path')
 const {spawn} = require('child_process')
 const exec = require('child_process').exec
+const queryType = 'graph'
+
 
 exports.fetchGraph = function(req, res) {
 	Graph.fetchGraph(function(err, graphArray) {
@@ -25,13 +28,24 @@ exports.fetchGraph = function(req, res) {
  * @return: list of node ids that match the search parameters
  */
 exports.findNode = function(req, res) {
-	if (!req.body.labelName)
-		res.send("Error, please select label name")
+	
+	let log = {
+		queryType: queryType,
+		developerAPI: false,
+		didModifyGraph: false,
+		request: req.body,
+		timestamp: new Date().getTime()	
+	}
+	if (!req.body.labelName) {
+		let error = "Error, please select label name" 
+		res.send(error)
+		logger.writeErrorLog(log, error)	
+	}
 	else {
 		Graph.findAnyNode(req.body, function(err, result) {
 			if (err) {
-				console.log(err)
 				res.send(err)
+				logger.writeErrorLog(log, err)		
 			} else {
 				/**
  				* Data coming from Neo4j has a peculiar structure
@@ -58,9 +72,11 @@ exports.findNode = function(req, res) {
 				for (var i = 0; i < 10; i++)
 					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
 				fs.writeFile(randFileName + ".csv", csv, function(err) {
+					log.cypher = result
 					if (err) {
-						console.log(err)
+						//console.log(err)
 						res.send(csv)
+						logger.writeErrorLog(log, err) 	
 					} else {
 						let absPath = path.join(__dirname, '../../' + randFileName + '.csv')
 						res.sendFile(absPath, {}, function(err) {
@@ -70,7 +86,8 @@ exports.findNode = function(req, res) {
 									console.log(err)
 								}
 							})	
-						})	
+						})
+						logger.writeLog(log)
 					}
 				})
 			}
@@ -84,10 +101,17 @@ exports.findNode = function(req, res) {
  * invoked in the code or when a user is specificially searching
  * for something within the DIGITAL_OBJECT object
  */
-exports.findPropertyValue = function(req, res) {	
+exports.findPropertyValue = function(req, res) {		
+	let log = {
+		queryType: queryType,
+		developerAPI: false,
+		didModifyGraph: false,
+		request: req.query,
+		timestamp: new Date().getTime()	
+	}
 	Graph.findPropertyValue(req.query.labelName, req.query.propertyName, req.query.engagementType, req.query.propertyValue, function(err, result) {
 		if (err) {
-			console.log(err)
+			logger.writeErrorLog(log, err)
 			res.send(err)
 		} else {
 			let records = result.records
@@ -106,8 +130,9 @@ exports.findPropertyValue = function(req, res) {
 			for (var i = 0; i < 10; i++)
 				randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
 			fs.writeFile(randFileName + ".csv", csv, function(err) {
+				log.cypher = result
 				if (err) {
-					console.log(err)
+					logger.writeErrorLog(log, err)
 					res.send(csv)
 				} else {
 					let absPath = path.join(__dirname, '../../' + randFileName + '.csv')
@@ -118,7 +143,8 @@ exports.findPropertyValue = function(req, res) {
 								console.log(err)
 							}
 						})	
-					})	
+					})
+					logger.writeLog(log)
 				}
 			})
 			
@@ -131,13 +157,22 @@ exports.findPropertyValue = function(req, res) {
  * This requires the labelName to be unique
  *
  */
-exports.createNewLabel = function(req, res) {
+exports.createNewLabel = function(req, res) {	
+	let log = {
+		queryType: queryType,
+		developerAPI: true,
+		didModifyGraph: true,
+		request: req.query,
+		timestamp: new Date().getTime()	
+	}
 	Graph.createNewLabel(req.query.labelName, function(err, result) {
+		log.cypher = result
 		if (err) {
-			console.log(err)
+			logger.writeErrorLog(log, err)	
 			res.send(err)
 		} else {	
 			res.send(result)
+			logger.writeLog(log)
 		}
 	})
 }
@@ -148,18 +183,26 @@ exports.createNewLabel = function(req, res) {
  *
  */
 exports.createNewProperty = function(req, res) {
+	let log = {
+		queryType: queryType,
+		developerAPI: true,
+		didModifyGraph: true,
+		request: req.body,
+		timestamp: new Date().getTime()	
+	}
 	let nodeIDs = req.body.nodeIDs
 	let propertyName = req.body.propertyName
 	let propertyValue = req.body.propertyValue
 	for (let i = 0; i < nodeIDs.length; i++) {
 		Graph.createNewProperty(nodeIDs[i], propertyName, propertyValue, function(err, result) {
+			log.cypher = result
 			if (err) {
-				console.log(err)
+				logger.writeErrorLog(log, err)
 				res.send(err)
 				return
 			}
 			if (i == (nodeIDs.length - 1)) {
-				console.log(result)
+				logger.writeLog(log)
 				res.send(result)
 			}
 		})
@@ -182,8 +225,14 @@ exports.createNewProperty = function(req, res) {
  *
  */
 exports.createNewRelationship = function(req, res) {
-	if (req.files.csvImport) {
-		
+	let log = {
+		queryType: queryType,
+		developerAPI: true,
+		didModifyGraph: true,
+		request: {body: req.boy, files: req.files},
+		timestamp: new Date().getTime()	
+	}
+	if (req.files.csvImport) {	
 		let csvFilePath =  req.files.csvImport.file
 		let lineNum = 0
 		let queries = []
@@ -217,11 +266,11 @@ exports.createNewRelationship = function(req, res) {
 					console.log(err)
 				}
 			})
-			if (error)
+			if (error) {
+				logger.writeErrorLog(log, error)
 				res.send(error)
+			}
 			else {
-				let isSent = false
-				let bulkString = ""
 				for (let i = 0; i < queries.length; i++) {
 					bulkString += queries[i] + ";"
 				}
@@ -233,9 +282,11 @@ exports.createNewRelationship = function(req, res) {
 				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
 				fs.writeFile(absPath, bulkString, function(err) {
 					exec('cypher-shell -u neo4j -p password --format plain < ' + absPath, function(error, stdout, stderr) {
-						console.log(error)
-						console.log(stdout)
-						console.log(stderr)	
+						if (error) {
+							logger.writeErrorLog(log, error)	
+						} else {
+							logger.writeLog(log)
+						}
 						fs.unlink(absPath, function(err) {
 							if (err) {
 								console.log(err)
@@ -250,10 +301,15 @@ exports.createNewRelationship = function(req, res) {
 		
 	} else {
 		Graph.createNewRelationship(req.body.labelName1, req.body.labelName2, req.body.relationshipName, req.body.options, function(err, result) {
-			if (err)
+			if (err) {
 				res.send(err)
-			else
+				log.cypher = result
+				logger.writeErrorLog(log, err)
+			}
+			else {
 				res.send(true)
+				logger.writeLog(log)
+			}
 		})
 	}
 }
@@ -264,13 +320,22 @@ exports.createNewRelationship = function(req, res) {
  * This also specifies whcih predicates have literals instead of objects
  */	
 exports.fetchSchema = function(req, res) {
+	let log = {
+		queryType: queryType,
+		developerAPI: true,
+		req: {request: "fetchSchema"},
+		didModifyGraph: true,
+		timestamp: new Date().getTime()	
+	}
 	Graph.describeGraph(function(err, result) {
 		/**
  		* Do data processing here	
  		*/	
 		let labelList = [];
-		if (!result)
+		if (!result) {
+			logger.writeErrorLog(log, err)
 			res.send(err)
+		}
 		for (let i = 0; i < result.records[0]._fields[0].length; i++) {
 			let tempLabel = {}
 			tempLabel.name = result.records[0]._fields[0][i].properties.name
@@ -295,7 +360,9 @@ exports.fetchSchema = function(req, res) {
 			let relationships = result.records[0]._fields[1]
 			Graph.describeLabel(labelList[i].name, function(err, result) {
 				if (err) {
+					logger.writeErrorLog(log, err)	
 					res.send(err)
+					return; //prevent sending multiple headers
 				}
 				else {
 					for (let j = 0; j < result.records[0]._fields[0].length; j++) {
@@ -321,6 +388,7 @@ exports.fetchSchema = function(req, res) {
 				}
 				//only send the request if you are on the last iteration of the outer-loop
 				if (i == labelList.length - 1) {
+					logger.writeLog(log)
 					res.send(resultList)
 				}
 			})		
