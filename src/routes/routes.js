@@ -6,7 +6,7 @@ module.exports = function(app) {
 	var logController = require('../controllers/logController');
 	var engagementController = require('../controllers/engagementController');
 	app.route('/:graphNAME/participant').get(participantController.fetchAllParticipants)
-	app.route('/view_graph').get(graphController.fetchGraph)
+	app.route('/graph/view').get(graphController.fetchGraph)
 	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
 	app.route('/graph/describe').get(graphController.fetchSchema)
 	app.route('/:graphNAME/participant/:id').get(participantController.getByParticipantId)

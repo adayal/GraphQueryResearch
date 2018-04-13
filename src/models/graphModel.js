@@ -7,8 +7,20 @@ var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"))
 export default class Graph {
 	constructor() {
 	}
+	
 	static fetchGraph(callback) {
-
+		let session = db.session()
+		let resultPromise = session.readTransaction(function(transaction) {
+			return transaction.run("MATCH (n) RETURN (n)")
+		})
+		
+		resultPromise.then(function(result) {
+			session.close()
+			callback(null, result)	
+		}).catch(function(err) {
+			session.close()
+			callback(err, null)
+		})
 	}
 	
 	/*
