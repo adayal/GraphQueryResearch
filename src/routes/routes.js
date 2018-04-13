@@ -4,6 +4,7 @@ module.exports = function(app) {
 	var participantController = require('../controllers/participantController');
 	var graphController = require('../controllers/graphController');
 	var logController = require('../controllers/logController');
+	var engagementController = require('../controllers/engagementController');
 	app.route('/:graphNAME/participant').get(participantController.fetchAllParticipants)
 	app.route('/view_graph').get(graphController.fetchGraph)
 	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
@@ -18,4 +19,5 @@ module.exports = function(app) {
 	app.route('/view/log/graph').get(logController.findGraphLogs)
 	app.route('/view/log/participant').get(logController.findParticipantLogs)
 	app.route('/view/log/log').get(logController.findLogLogs)
+	app.route('/:graphNAME/engagement/:engagementTYPE').get(engagementController.fetchEngagementDetails)
 }
