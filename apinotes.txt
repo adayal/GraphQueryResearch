@@ -7,6 +7,8 @@ API 1:
 
 
 
+===============MINIMUM REQS ================
+
 /graph/schema --> label, Predicate, Object
 /view/log
 /:network/view/graph
@@ -33,7 +35,21 @@ API 1:
 	CSV
 
 
+Look into Visualization
+
+
 
 Focus on:
 	 write part	
 
+
+Logging: 
+{
+	queryType: graph/participant/log
+	developerAPI: true/false
+	didModifyGraph: true/false
+	request obj: req
+	cypher obj: result
+	timestamp = new Date().getTime()
+	errors: err
+}
