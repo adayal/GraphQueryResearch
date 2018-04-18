@@ -5,13 +5,12 @@ var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"))
 
 
 export default class Graph {
-	constructor() {
-	}
 	
-	static fetchGraph(callback) {
+	static fetchGraph(graphName, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
-			return transaction.run("MATCH (n) RETURN (n)")
+			let query = graphName ? "MATCH (n), (m:NETWORK{name:'"+graphName+"'}) WHERE (n)-[:PART_OF]->(m) RETURN n" : "MATCH (n) RETURN (n)"
+			return transaction.run(query)
 		})
 		
 		resultPromise.then(function(result) {

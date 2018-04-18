@@ -19,7 +19,7 @@ exports.fetchGraph = function(req, res) {
 		request: req.body,
 		timestamp: new Date().getTime()	
 	}
-	Graph.fetchGraph(function(err, graphArray) {
+	Graph.fetchGraph(req.query.graphName, function(err, graphArray) {
 		if (err) {
 			//console.log(err)	
 			logger.writeErrorLog(log, err)
