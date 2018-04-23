@@ -2,6 +2,7 @@
 
 import Graph from "../models/graphModel"
 var logger = require("../controllers/logController.js")
+var errorMessage = require("../errors.js")
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
 const fs = require('fs')
@@ -26,7 +27,19 @@ exports.fetchGraph = function(req, res) {
 		} else {
 			log.cypher = graphArray
 			logger.writeLog(log)
-			res.send(JSON.stringify(graphArray));
+			if (graphArray) {
+				let nodes = []
+				for (let i = 0; i < graphArray.records.length; i++) {
+					let tempObj = {}
+					tempObj.nodeID = graphArray.records[i]._fields[0].identity.low
+					tempObj.label = graphArray.records[i]._fields[0].labels
+					tempObj.properties = graphArray.records[i]._fields[0].properties
+					nodes.push(tempObj)
+				}
+				res.send(nodes)
+			} else {
+				res.send(errorMessage.noResults)
+			}
 		}
 			
 	});
@@ -47,7 +60,11 @@ exports.fetchNode = function(req, res) {
 		} else {
 			log.cypher = data
 			logger.writeLog(log)
-			res.send(data)
+			if (data) {
+				res.send(data)
+			} else {
+				res.send(errorMessage.noResults)
+			}
 		}
 	});	
 }
@@ -81,7 +98,7 @@ exports.findNode = function(req, res) {
 			if (err) {
 				res.send(err)
 				logger.writeErrorLog(log, err)		
-			} else {
+			} else if (result) {
 				/**
  				* Data coming from Neo4j has a peculiar structure
  				* Everything is stored in an array called 'records', which is a field
@@ -125,6 +142,10 @@ exports.findNode = function(req, res) {
 						logger.writeLog(log)
 					}
 				})
+			} else {
+				log,cypher = result
+				logger.writeLog(log)
+				res.send(errorMessage.noResult)
 			}
 		})	
 	}	
@@ -148,7 +169,7 @@ exports.findPropertyValue = function(req, res) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
-		} else {
+		} else if (results) {
 			let records = result.records
 			let fields = ["nodeID"]
 			let nodes = []
@@ -183,6 +204,10 @@ exports.findPropertyValue = function(req, res) {
 				}
 			})
 			
+		} else {
+			log.cypher = result
+			logger.writeLog(log)
+			res.send(errorMessage.noResult)
 		}
 	});
 }
