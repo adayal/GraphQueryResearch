@@ -7,15 +7,13 @@
  * 'getDatabaseConnection' function
  *
  */
-
+var config = require("../../config.js")
 var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
+var errorMessage = require("../errors.js")
 
 export default class Participant {
-	constructor() {
-	
-	}
-	
+
 	static fetchParticipantDetails(graphNAME, participantID, callback) {
 		let session = db.session();
 		let resultPromise = session.readTransaction(function(transaction) {
@@ -24,12 +22,10 @@ export default class Participant {
 		});
 		resultPromise.then(function(result) {
 			session.close();
-			console.log(result.records);
 			callback(null, result.records);
-		}).catch(function(result) {
+		}).catch(function(err) {
 			session.close();
-			console.log(result.error);
-			callback(result.error, null)
+			callback(errorMessage.neo4jError + err, null)
 		});
 	}
 
@@ -51,10 +47,9 @@ export default class Participant {
 		resultPromise.then(function(result) {
 			session.close();
 			callback(null, result.records);
-		}).catch(function(error) {
+		}).catch(function(err) {
 			session.close();
-			console.log(result.error);
-			callback(result.error, null)
+			callback(errorMessage.neo4jError + err, null)
 		});
 	
 

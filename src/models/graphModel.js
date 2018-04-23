@@ -1,17 +1,17 @@
 'use strict';
 
+var config = require("../../config.js")
 var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
-
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
+var errorMessages = require("../errors.js")
 
 export default class Graph {
-	constructor() {
-	}
 	
-	static fetchGraph(callback) {
+	static fetchGraph(graphName, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
-			return transaction.run("MATCH (n) RETURN (n)")
+			let query = graphName ? "MATCH (n), (m:NETWORK{name:'"+graphName+"'}) WHERE (n)-[:PART_OF]->(m) RETURN n" : "MATCH (n) RETURN (n)"
+			return transaction.run(query)
 		})
 		
 		resultPromise.then(function(result) {
@@ -19,7 +19,23 @@ export default class Graph {
 			callback(null, result)	
 		}).catch(function(err) {
 			session.close()
-			callback(err, null)
+			callback(errorMessages.neo4jError + err, null)
+		})
+	}
+
+	static fetchNode(nodeID, callback) {
+		let session = db.session()
+		let resultPromise = session.readTransaction(function(transaction) {
+			let query = "MATCH (n) WHERE ID(n) = " + nodeID
+			return transaction.run(query)
+		})
+		
+		resultPromise.then(function(result) {
+			session.close()
+			callback(null, result)	
+		}).catch(function(err) {
+			session.close()
+			callback(errorMessages.neo4jError + err, null)
 		})
 	}
 	
@@ -51,7 +67,6 @@ export default class Graph {
 			}
 		}).catch(function(result) {
 			session.close();
-			console.log(result)
 		});
 	}
 
@@ -104,7 +119,7 @@ export default class Graph {
 				
 		}).catch(function(result) {
 			session.close()
-			callback("error: " + result, null)
+			callback(errorMessages.neo4jError + result, null)
 		});	
 	}
 
@@ -125,7 +140,7 @@ export default class Graph {
 				
 		}).catch(function(result) {
 			session.close()
-			callback("error: " + result, null)
+			callback(errorMessages.neo4jError + result, null)
 		});
 	}
 
@@ -159,10 +174,10 @@ export default class Graph {
 					callback(null, result)
 				}).catch(function(result) {
 					session.close()
-					callback("error: " + result, null)
+					callback(errorMessages.neo4jError + result, null)
 				})
 			} else {
-				callback("error: please select a label. List includes the following: " + list, null)
+				callback(errorMessages.unkownLabel + list, null)
 			}
 		})
 	}
@@ -173,42 +188,35 @@ export default class Graph {
  	* For each node id, return the following information '<node id>': 'propertyValue'
  	* Return as json
  	*/
-	static findPropertyValue(labelName, propertySearch, engagementType, propertyValue, callback) {
-		this.doesTypeObjectExist(labelName, function(bool, list) {
-			if (bool) {
-				let session = db.session();
-				
-				//Arrow function preserves 'this'
-				let resultPromise = session.readTransaction((transaction) => {
-					let regex = this.getRegexForEngagementType(engagementType);
-					if (!regex) {
-						return null;
-					}
-					let result = null
-					//share engagement type has an error with the regex provided
-					if (engagementType == "share") {
-						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return ID(n)")	
-					} else if (engagementType == "post") {
-						result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
-					} else {
-					//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
-					//unsafe but only exposed to developers 
-						result = transaction.run("MATCH (n:" + labelName + ") WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN ID(n)");
-					}
-					return result;
-				});
-				resultPromise.then(function(result) {
-					//console.log(result)
-					session.close();
-					callback(null, result);
-				}).catch(function(err) {
-					session.close();
-					callback(err, null);
-				});	
+	static findPropertyValue(propertySearch, engagementType, callback) {
+		let session = db.session();
+		
+		//Arrow function preserves 'this'
+		let resultPromise = session.readTransaction((transaction) => {
+			let regex = this.getRegexForEngagementType(engagementType);
+			if (!regex) {
+				return null;
+			}
+			let result = null
+			//share engagement type has an error with the regex provided
+			if (engagementType == "share") {
+				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return ID(n)")	
+			} else if (engagementType == "post") {
+				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
 			} else {
-				callback("your property does not exist", null);	
-			}	
-		}.bind(this));
+			//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
+			//unsafe but only exposed to developers 
+				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN ID(n)");
+			}
+			return result;
+		});
+		resultPromise.then(function(result) {
+			session.close();
+			callback(null, result);
+		}).catch(function(err) {
+			session.close();
+			callback(errorMessages.neo4jError + err, null);
+		});		
 	}
 
 	
@@ -229,7 +237,7 @@ export default class Graph {
 			callback(null, result);
 		}).catch(function(err) {
 			session.close();
-			callback(err, null);
+			callback(errorMessages.neo4jError + err, null);
 		})	
 	}
 
@@ -251,10 +259,10 @@ export default class Graph {
 					callback(null, result)
 				}).catch(function(err) {
 					session.close()
-					callback(err)
+					callback(errorMessages.neo4jError + err, null)
 				})
 			} else {
-				callback("error: label name already exists", null)
+				callback(errorMessages.existsLabel , null)
 			}
 		}) 	
 	}
@@ -274,7 +282,7 @@ export default class Graph {
 			callback(null, result)
 		}).catch(function(err) {
 			session.close()
-			callback(err)
+			callback(errorMessages.neo4jError + err , null)
 		})
 	}
 
@@ -319,16 +327,14 @@ export default class Graph {
 							callback(null, result)
 						}).catch(function(err) {
 							session.close()
-							callback(err, null)
-						})
-					
-				
+							callback(errorMessages.neo4jError + err, null)
+						})	
 					} else {
-						//throw error, label not found
+						callback(errorMessages.unknownLabel + list, null)	
 					}
 				})
-			} else {
-				//throw error, label not found
+			} else {	
+				callback(errorMessages.unknownLabel + list, null)	
 			}
 		})
 	}

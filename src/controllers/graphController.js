@@ -2,6 +2,7 @@
 
 import Graph from "../models/graphModel"
 var logger = require("../controllers/logController.js")
+var errorMessage = require("../errors.js")
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
 const fs = require('fs')
@@ -16,21 +17,56 @@ exports.fetchGraph = function(req, res) {
 		queryType: queryType,
 		developerAPI: false,
 		didModifyGraph: false,
-		request: req.body,
+		request: req.query,
 		timestamp: new Date().getTime()	
 	}
-	Graph.fetchGraph(function(err, graphArray) {
+	Graph.fetchGraph(req.query.graphName, function(err, graphArray) {
 		if (err) {
-			//console.log(err)	
 			logger.writeErrorLog(log, err)
 			res.send(err)
 		} else {
 			log.cypher = graphArray
 			logger.writeLog(log)
-			res.send(JSON.stringify(graphArray));
+			if (graphArray) {
+				let nodes = []
+				for (let i = 0; i < graphArray.records.length; i++) {
+					let tempObj = {}
+					tempObj.nodeID = graphArray.records[i]._fields[0].identity.low
+					tempObj.label = graphArray.records[i]._fields[0].labels
+					tempObj.properties = graphArray.records[i]._fields[0].properties
+					nodes.push(tempObj)
+				}
+				res.send(nodes)
+			} else {
+				res.send(errorMessage.noResults)
+			}
 		}
 			
 	});
+}
+
+exports.fetchNode = function(req, res) {
+	let log = {
+		queryType: queryType,
+		developerAPI: false,
+		didModifyGraph: false,
+		request: req.query,
+		timestamp: new Date().getTime()	
+	}
+	Graph.fetchNode(req.query.nodeID, function(err, data) {
+		if (err) {
+			logger.writeErrorLog(log, err)
+			res.send(err)
+		} else {
+			log.cypher = data
+			logger.writeLog(log)
+			if (data) {
+				res.send(data)
+			} else {
+				res.send(errorMessage.noResults)
+			}
+		}
+	});	
 }
 
 /**
@@ -62,7 +98,7 @@ exports.findNode = function(req, res) {
 			if (err) {
 				res.send(err)
 				logger.writeErrorLog(log, err)		
-			} else {
+			} else if (result) {
 				/**
  				* Data coming from Neo4j has a peculiar structure
  				* Everything is stored in an array called 'records', which is a field
@@ -106,6 +142,10 @@ exports.findNode = function(req, res) {
 						logger.writeLog(log)
 					}
 				})
+			} else {
+				log,cypher = result
+				logger.writeLog(log)
+				res.send(errorMessage.noResult)
 			}
 		})	
 	}	
@@ -125,11 +165,11 @@ exports.findPropertyValue = function(req, res) {
 		request: req.query,
 		timestamp: new Date().getTime()	
 	}
-	Graph.findPropertyValue(req.query.labelName, req.query.propertyName, req.query.engagementType, req.query.propertyValue, function(err, result) {
+	Graph.findPropertyValue(req.query.propertyName, req.query.engagementType, function(err, result) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
-		} else {
+		} else if (results) {
 			let records = result.records
 			let fields = ["nodeID"]
 			let nodes = []
@@ -164,6 +204,10 @@ exports.findPropertyValue = function(req, res) {
 				}
 			})
 			
+		} else {
+			log.cypher = result
+			logger.writeLog(log)
+			res.send(errorMessage.noResult)
 		}
 	});
 }
@@ -293,8 +337,7 @@ exports.createNewRelationship = function(req, res) {
 				let randFileName = ""
 				let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				for (var i = 0; i < 10; i++)
-					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
-				
+					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))	
 				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
 				fs.writeFile(absPath, bulkString, function(err) {
 					exec('cypher-shell -u neo4j -p password --format plain < ' + absPath, function(error, stdout, stderr) {
@@ -314,7 +357,6 @@ exports.createNewRelationship = function(req, res) {
 				})	
 			}
 		})	
-		
 	} else {
 		Graph.createNewRelationship(req.body.labelName1, req.body.labelName2, req.body.relationshipName, req.body.options, function(err, result) {
 			if (err) {
