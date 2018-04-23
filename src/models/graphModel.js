@@ -1,8 +1,8 @@
 'use strict';
 
+var config = require("../../config.js")
 var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
-
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
 
 export default class Graph {
 	
@@ -319,15 +319,14 @@ export default class Graph {
 						}).catch(function(err) {
 							session.close()
 							callback(err, null)
-						})
-					
-				
+						})	
 					} else {
-						//throw error, label not found
+						callback("error, label not found: " + list, null)	
 					}
 				})
-			} else {
-				//throw error, label not found
+			} else {	
+				callback("error, label not found: " + list, null)
+				
 			}
 		})
 	}

@@ -7,15 +7,12 @@
  * 'getDatabaseConnection' function
  *
  */
-
+var config = require("../../config.js")
 var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
 
 export default class Participant {
-	constructor() {
-	
-	}
-	
+
 	static fetchParticipantDetails(graphNAME, participantID, callback) {
 		let session = db.session();
 		let resultPromise = session.readTransaction(function(transaction) {

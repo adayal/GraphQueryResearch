@@ -16,12 +16,11 @@ exports.fetchGraph = function(req, res) {
 		queryType: queryType,
 		developerAPI: false,
 		didModifyGraph: false,
-		request: req.body,
+		request: req.query,
 		timestamp: new Date().getTime()	
 	}
 	Graph.fetchGraph(req.query.graphName, function(err, graphArray) {
 		if (err) {
-			//console.log(err)	
 			logger.writeErrorLog(log, err)
 			res.send(err)
 		} else {
@@ -293,8 +292,7 @@ exports.createNewRelationship = function(req, res) {
 				let randFileName = ""
 				let alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 				for (var i = 0; i < 10; i++)
-					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))
-				
+					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))	
 				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
 				fs.writeFile(absPath, bulkString, function(err) {
 					exec('cypher-shell -u neo4j -p password --format plain < ' + absPath, function(error, stdout, stderr) {
@@ -314,7 +312,6 @@ exports.createNewRelationship = function(req, res) {
 				})	
 			}
 		})	
-		
 	} else {
 		Graph.createNewRelationship(req.body.labelName1, req.body.labelName2, req.body.relationshipName, req.body.options, function(err, result) {
 			if (err) {

@@ -7,14 +7,12 @@
  * 'getDatabaseConnection' function
  *
  */
-
+var config = require("../../config.js")
 var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
 
-export default class Engagement {
-	constructor() {
-	
-	}
+
+export default class Engagement {	
 	
 	static fetchEngagementDetails(graphNAME, engagementTYPE, callback) {
 		let session = db.session();
@@ -22,9 +20,7 @@ export default class Engagement {
 		str1 += "\'"+graphNAME+"\'"
 		str1 += ' Match (givenProfile)-[:FROM]-(engagement) Match (engagement)-[:TO]->(toProfile) Match (engagement)-[:IS_A]->(eType:'
                 str1 += engagementTYPE
-		str1 += ') return givenProfile.id as Person1, toProfile.id as Person2, count(toProfile) as count order by givenProfile.id'
-		console.log(str1 + "DAMN")
-		
+		str1 += ') return givenProfile.id as Person1, toProfile.id as Person2, count(toProfile) as count order by givenProfile.id'	
 		let resultPromise = session.readTransaction(function(transaction) {
 		let result =  transaction.run(str1)
 			 return result;
