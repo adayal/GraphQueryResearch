@@ -14,6 +14,7 @@ module.exports = function(app) {
 	app.route('/graph/addLabel').get(graphController.createNewLabel)
 	app.route('/graph/addRelationship').post(graphController.createNewRelationship)
 	app.route('/graph/find').post(graphController.findNode)
+	app.route('/graph/fetchNode').get(graphController.fetchNode)
 	app.route('/view/log/all').get(logController.getAllLogs)
 	app.route('/view/log/developer').get(logController.findDeveloperLogs)
 	app.route('/view/log/graph').get(logController.findGraphLogs)

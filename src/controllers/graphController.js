@@ -32,6 +32,26 @@ exports.fetchGraph = function(req, res) {
 	});
 }
 
+exports.fetchNode = function(req, res) {
+	let log = {
+		queryType: queryType,
+		developerAPI: false,
+		didModifyGraph: false,
+		request: req.query,
+		timestamp: new Date().getTime()	
+	}
+	Graph.fetchNode(req.query.nodeID, function(err, data) {
+		if (err) {
+			logger.writeErrorLog(log, err)
+			res.send(err)
+		} else {
+			log.cypher = data
+			logger.writeLog(log)
+			res.send(data)
+		}
+	});	
+}
+
 /**
  * This will find any node based on any part that 'CONTAINS' something
  * Required: labelName (string)
@@ -124,7 +144,7 @@ exports.findPropertyValue = function(req, res) {
 		request: req.query,
 		timestamp: new Date().getTime()	
 	}
-	Graph.findPropertyValue(req.query.labelName, req.query.propertyName, req.query.engagementType, req.query.propertyValue, function(err, result) {
+	Graph.findPropertyValue(req.query.propertyName, req.query.engagementType, function(err, result) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)

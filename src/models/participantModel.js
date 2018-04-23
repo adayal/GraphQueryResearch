@@ -10,6 +10,7 @@
 var config = require("../../config.js")
 var neo4j = require('neo4j-driver').v1;
 var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
+var errorMessages = require("../errors.js")
 
 export default class Participant {
 
@@ -23,10 +24,9 @@ export default class Participant {
 			session.close();
 			console.log(result.records);
 			callback(null, result.records);
-		}).catch(function(result) {
+		}).catch(function(err) {
 			session.close();
-			console.log(result.error);
-			callback(result.error, null)
+			callback(errorMessage.neo4jError + err, null)
 		});
 	}
 
@@ -50,8 +50,7 @@ export default class Participant {
 			callback(null, result.records);
 		}).catch(function(error) {
 			session.close();
-			console.log(result.error);
-			callback(result.error, null)
+			callback(errorMessage.neo4jError + err, null)
 		});
 	
 
