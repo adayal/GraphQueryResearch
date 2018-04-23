@@ -5,6 +5,7 @@ module.exports = function(app) {
 	var graphController = require('../controllers/graphController');
 	var logController = require('../controllers/logController');
 	var engagementController = require('../controllers/engagementController');
+	var comparativeController = require('../controllers/comparativeController');
 	app.route('/:graphNAME/participant').get(participantController.fetchAllParticipants)
 	app.route('/graph/view').get(graphController.fetchGraph)
 	app.route('/graph/findByPropertyValue').get(graphController.findPropertyValue)
@@ -21,4 +22,5 @@ module.exports = function(app) {
 	app.route('/view/log/participant').get(logController.findParticipantLogs)
 	app.route('/view/log/log').get(logController.findLogLogs)
 	app.route('/:graphNAME/engagement/:engagementTYPE').get(engagementController.fetchEngagementDetails)
+	app.route('/compare/:graphNAME1/:graphNAME2/:labelName/:engagementTYPE').get(comparativeController.compareTwoGraphs)
 }

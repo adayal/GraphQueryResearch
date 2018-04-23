@@ -20,7 +20,7 @@ export default class Engagement {
 		str1 += "\'"+graphNAME+"\'"
 		str1 += ' Match (givenProfile)-[:FROM]-(engagement) Match (engagement)-[:TO]->(toProfile) Match (engagement)-[:IS_A]->(eType:'
                 str1 += engagementTYPE
-		str1 += ') return givenProfile.id as Person1, toProfile.id as Person2, count(toProfile) as count order by givenProfile.id'	
+		str1 += ') return givenProfile.id as Person1, toProfile.id as Person2, count(toProfile) as count order by givenProfile.id'
 		let resultPromise = session.readTransaction(function(transaction) {
 		let result =  transaction.run(str1)
 			 return result;
