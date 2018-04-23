@@ -9,13 +9,11 @@
  */
 
 var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver("bolt://localhost", neo4j.auth.basic("neo4j", "password"));
+var config = require("../../config.js")
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
 
 export default class Comparative {
-	constructor() {
-	
-	}
-	
+
 	static compareTwoGraphs(graphNAME1, graphNAME2, labelName, engagementTYPE, callback) {
 		let session = db.session();
 		let str1 = 'Match (givenProfile: PROFILE)-[:PART_OF]->(network) where network.name = '
@@ -43,7 +41,7 @@ export default class Comparative {
 		}).catch(function(result) {
 			session.close();
 			console.log(result.error);
-			callback(result.error, null)
+			callback(errorMessage.neo4jError + result.error, null)
 		});
 	}
 }
