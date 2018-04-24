@@ -189,6 +189,7 @@ export default class Graph {
 		})
 	}
 
+
 	/*
  	* Find all the nodes of the given label name. If the node
  	* has a property matching the regex, return the node id.
@@ -224,9 +225,10 @@ export default class Graph {
 			session.close();
 			callback(errorMessages.neo4jError + err, null);
 		});		
-	}
+	}	
 
-	
+
+
 	/*
  	* Create a new property for a node given the nodeIDs, propertyName and the propertyValue
  	* This function does not care what other properties are being stored (e.g. duplicated data might occur).

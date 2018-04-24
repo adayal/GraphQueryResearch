@@ -23,4 +23,4 @@ module.exports = function(app) {
 	app.route('/view/log/log').get(logController.findLogLogs)
 	app.route('/:graphNAME/engagement/:engagementTYPE').get(engagementController.fetchEngagementDetails)
 	app.route('/compare/:graphNAME1/:graphNAME2/:labelName/:engagementTYPE').get(comparativeController.compareTwoGraphs)
-}
+}	

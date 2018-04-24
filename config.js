@@ -10,5 +10,10 @@
 module.exports = {
 	username: "neo4j",
 	password: "password",
-	url: "bolt://localhost"	
+	url: "bolt://localhost",
+	nodePort: 3000,
+	mongourl: "mongodb://localhost:27017",
+	mongodb: "GraphQuery",
+	mongoCollection: "logs",
+	pathToUploadFiles: "./uploadedCSV"
 };
