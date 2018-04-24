@@ -57,6 +57,24 @@ exports.compareTwoGraphs = function (req, res) {
 						remove(resultListpart2, listOfEngagementsGraphTwo[j]);
 					}
 				}
+			}
+			for(let i = 0; i < resultListpart1.length; i++)
+			{
+				if(i != (resultListpart1.length-1) && resultListpart1[i].personOne == resultListpart1[i+1].personOne)
+				{
+					resultListpart1[i].engagementsBetween+=resultListpart1[i+1].engagementsBetween
+					remove(resultListpart1, resultListpart1[i+1])
+					delete resultListpart1[i].person2					
+				}
+			}
+			for(let i = 0; i < resultListpart2.length; i++)
+			{
+				if(i != (resultListpart2.length-1) && resultListpart2[i].personOne == resultListpart2[i+1].personOne)
+				{
+					resultListpart2[i].engagementsBetween+=resultListpart2[i+1].engagementsBetween
+					remove(resultListpart2, resultListpart2[i+1])
+					delete resultListpart2[i].person2					
+				}
 			}	
 			comparativeArray = resultListpart1.concat(resultListpart2)
 			res.send(comparativeArray);
