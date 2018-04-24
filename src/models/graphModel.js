@@ -156,7 +156,14 @@ export default class Graph {
 			if (bool) {
 				let session = db.session()
 				let stmt = "MATCH (m:" + body.labelName + ") "
-				if (body.contains) {
+				if (body.contains && body.propertyName) {
+					if (body.not) {
+						stmt += "WHERE NOT toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') RETURN ID(m)"	
+					} else {
+						stmt += "WHERE toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') RETURN ID(m)"	
+					}
+				}
+				else if (body.contains && !body.propertyName) {
 					if (body.not) {
 						stmt += "WHERE (none(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) RETURN ID(m)"
 					} else {
