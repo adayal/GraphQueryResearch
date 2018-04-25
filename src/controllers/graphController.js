@@ -418,30 +418,28 @@ exports.fetchSchema = function(req, res) {
 			temp.predicates = []	
 			let relationships = result.records[0]._fields[1]
 			Graph.describeLabel(labelList[i].name, function(err, result) {
-				if (err) {
+				if (err && !result) {
+					//if the inner callback fails in the model, skip that label, continue to the next
 					logger.writeErrorLog(log, err)	
 					res.send(err)
 					return; //prevent sending multiple headers
 				}
 				else {
-					for (let j = 0; j < result.records[0]._fields[0].length; j++) {
+					for (let j = 0; j < result.props.records[0]._fields[0].length; j++) {
 						let tempPred = {}
-						tempPred.name = result.records[0]._fields[0][j]
+						tempPred.name = result.props.records[0]._fields[0][j]
 						tempPred.type = 'literal'
 						temp.predicates.push(tempPred)
 					}
-					
-					for (let j = 0; j < relationships.length; j++) {
-						if ((relationships[j].start.low * -1) == labelList[i].id) {
-							let relationship = {}
-							relationship.name = relationships[j].type
-							for (let k = 0; k < labelList.length; k++) {	
-								if (labelList[k].id == (relationships[j].end.low * -1)) {
-									relationship.type = labelList[k].name
-								}		
-							}
-							temp.predicates.push(relationship)
+					for (let j = 0; j < result.rels.records.length; j++) {
+						if (result.rels.records[j]) {
+							let tempRel = {}
+							tempRel.name = result.rels.records[j]._fields[0][0]
+							tempRel.type = result.rels.records[j]._fields[1]
+							temp.predicates.push(tempRel)
 						}
+						//fields[0][0] is the obj
+						//fields[1] is the type
 					}
 					resultList.push(temp)	
 				}

@@ -136,12 +136,36 @@ export default class Graph {
 		
 		resultPromise.then(function(result) {
 			session.close()
-			callback(null, result)
+			this.describeLabelRelationships(labelName, function (err, relationships) {
+				if (err) {
+					callback(err, result)
+				} else {
+					let labelObj = {}
+					labelObj.props = result
+					labelObj.rels = relationships
+					callback(null, labelObj)		
+				}
+			})
 				
-		}).catch(function(result) {
+		}.bind(this)).catch(function(result) {
 			session.close()
 			callback(errorMessages.neo4jError + result, null)
 		});
+	}
+
+	static describeLabelRelationships(labelName, callback) {
+		let session = db.session()
+		let resultPromise = session.readTransaction(function(transaction) {
+			let result = transaction.run('MATCH (n:'+ labelName + ')<-[r]->(m) return distinct labels(m), TYPE(r)')
+			return result
+		})
+		resultPromise.then(function(result) {
+			session.close()
+			callback(null, result)
+		}).catch(function(err) {
+			session.close()
+			callback(errorMessages.neo4jError + result, null)
+		})
 	}
 
 	/*
