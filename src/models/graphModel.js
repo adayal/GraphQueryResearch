@@ -156,7 +156,14 @@ export default class Graph {
 			if (bool) {
 				let session = db.session()
 				let stmt = "MATCH (m:" + body.labelName + ") "
-				if (body.contains) {
+				if (body.contains && body.propertyName) {
+					if (body.not) {
+						stmt += "WHERE NOT toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') RETURN ID(m)"	
+					} else {
+						stmt += "WHERE toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') RETURN ID(m)"	
+					}
+				}
+				else if (body.contains && !body.propertyName) {
 					if (body.not) {
 						stmt += "WHERE (none(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) RETURN ID(m)"
 					} else {
@@ -181,6 +188,7 @@ export default class Graph {
 			}
 		})
 	}
+
 
 	/*
  	* Find all the nodes of the given label name. If the node
@@ -217,9 +225,10 @@ export default class Graph {
 			session.close();
 			callback(errorMessages.neo4jError + err, null);
 		});		
-	}
+	}	
 
-	
+
+
 	/*
  	* Create a new property for a node given the nodeIDs, propertyName and the propertyValue
  	* This function does not care what other properties are being stored (e.g. duplicated data might occur).

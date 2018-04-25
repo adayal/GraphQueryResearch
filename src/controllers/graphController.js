@@ -69,6 +69,7 @@ exports.fetchNode = function(req, res) {
 	});	
 }
 
+
 /**
  * This will find any node based on any part that 'CONTAINS' something
  * Required: labelName (string)

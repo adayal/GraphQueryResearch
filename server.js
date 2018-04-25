@@ -1,18 +1,20 @@
+var config = require("./config")
 var MongoClient = require('mongodb').MongoClient;
-var mongourl = "mongodb://localhost:27017";
-var dbName = "GraphQuery"
+var mongourl = config.mongourl;
+var dbName = config.mongodb
 var mongoDB = null;
-var collectionName = "logs"
+var collectionName =  config.mongoCollection
 var express = require('express'),
+
 app = express(),
-port = process.env.PORT || 3001,
+port = process.env.PORT || config.nodePort,
 bodyParser = require('body-parser'),
 bb = require('express-busboy'),
 multer = require('multer');
 bb.extend(app, {
 
 	upload: true,
-	path: './savedImages',
+	path: config.pathToUploadFiles,
 	allowedPath: /./
 
 });
