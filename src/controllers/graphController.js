@@ -1,7 +1,7 @@
 'use strict';
 
 import Graph from "../models/graphModel"
-var logger = require("../controllers/logController.js")
+var logger = require("./logController.js")
 var errorMessage = require("../errors.js")
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
@@ -12,6 +12,10 @@ const exec = require('child_process').exec
 const queryType = 'graph'
 
 
+/*
+ * Fetch all the nodes in a specific graph or all graphs
+ *
+ */
 exports.fetchGraph = function(req, res) {	
 	let log = {
 		queryType: queryType,
@@ -42,7 +46,7 @@ exports.fetchGraph = function(req, res) {
 			}
 		}
 			
-	});
+	})
 }
 
 exports.fetchNode = function(req, res) {
@@ -52,6 +56,11 @@ exports.fetchNode = function(req, res) {
 		didModifyGraph: false,
 		request: req.query,
 		timestamp: new Date().getTime()	
+	}
+	if (!req.query.nodeID) {
+		logger.writeErrorLog(log, errorMessage.missingParameter)
+		res.send(errorMessage.missingParameter)
+		return					
 	}
 	Graph.fetchNode(req.query.nodeID, function(err, data) {
 		if (err) {
@@ -66,7 +75,7 @@ exports.fetchNode = function(req, res) {
 				res.send(errorMessage.noResults)
 			}
 		}
-	});	
+	})	
 }
 
 
@@ -90,9 +99,8 @@ exports.findNode = function(req, res) {
 		timestamp: new Date().getTime()	
 	}
 	if (!req.body.labelName) {
-		let error = "Error, please select label name" 
-		res.send(error)
-		logger.writeErrorLog(log, error)	
+		res.send(errorMessage.missingParameter)
+		logger.writeErrorLog(log, errorMessage.missingParamter)	
 	}
 	else {
 		Graph.findAnyNode(req.body, function(err, result) {
@@ -127,7 +135,6 @@ exports.findNode = function(req, res) {
 				fs.writeFile(randFileName + ".csv", csv, function(err) {
 					log.cypher = result
 					if (err) {
-						//console.log(err)
 						res.send(csv)
 						logger.writeErrorLog(log, err) 	
 					} else {
@@ -144,7 +151,7 @@ exports.findNode = function(req, res) {
 					}
 				})
 			} else {
-				log,cypher = result
+				log.cypher = result
 				logger.writeLog(log)
 				res.send(errorMessage.noResult)
 			}
@@ -210,7 +217,7 @@ exports.findPropertyValue = function(req, res) {
 			logger.writeLog(log)
 			res.send(errorMessage.noResult)
 		}
-	});
+	})
 }
 
 /**
@@ -225,6 +232,11 @@ exports.createNewLabel = function(req, res) {
 		didModifyGraph: true,
 		request: req.query,
 		timestamp: new Date().getTime()	
+	}
+	if (!req.query.labelName) {
+		logger.writeErrorLog(log, errorMessage.missingParameter)
+		res.send(errorMessage.missingParameter)
+		return 
 	}
 	Graph.createNewLabel(req.query.labelName, function(err, result) {
 		log.cypher = result
@@ -250,6 +262,11 @@ exports.createNewProperty = function(req, res) {
 		didModifyGraph: true,
 		request: req.body,
 		timestamp: new Date().getTime()	
+	}
+	if (!req.body.nodeIDs || !req.body.propertyName || !req.body.propertyValue) {
+		logger.writeErrorLog(log, errorMessage.missingParamter)
+		res.send(errorMessage.missingParamter)
+		return		
 	}
 	let nodeIDs = req.body.nodeIDs
 	let propertyName = req.body.propertyName
@@ -308,7 +325,10 @@ exports.createNewRelationship = function(req, res) {
  			* THIS INNER FUNCTION WILL BE CALLED FOR N LINES
  			*/
 			if (lineNum == 0) {
-				//console.log(obj)
+				if (!obj.label1 || !obj.label2 || !obj.relationshipName) {
+					logger.writeErrorLog(log, errorMessage.missingParamter)
+					res.send(errorMessage.missingParamter)
+				}
 				label1 = obj.label1
 				label2 = obj.label2
 				relationshipName = obj.relationshipName	
@@ -359,6 +379,11 @@ exports.createNewRelationship = function(req, res) {
 			}
 		})	
 	} else {
+		if (!req.body.labelName1 || !req.body.labelName2 || !req.body.relationshipName) {
+			logger.writeErrorLog(log, errorMessage.missingParamter)
+			res.send(errorMessage.missingParamter)
+			return
+		}
 		Graph.createNewRelationship(req.body.labelName1, req.body.labelName2, req.body.relationshipName, req.body.options, function(err, result) {
 			if (err) {
 				res.send(err)

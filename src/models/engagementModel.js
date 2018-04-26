@@ -14,6 +14,12 @@ var errorMessage = require("../errors.js")
 
 export default class Engagement {	
 	
+	/**
+ 	* Fetch the engagement details of a all profiles within a specific graph for a specific engagementTYPE
+ 	* @param graphNAME to search in
+ 	* @param engagementTYPE to search for
+ 	* @callback(error, result)
+ 	*/
 	static fetchEngagementDetails(graphNAME, engagementTYPE, callback) {
 		let session = db.session();
 		let str1 = 'Match (givenProfile: PROFILE)-[:PART_OF]->(network) where network.name = '
@@ -22,18 +28,15 @@ export default class Engagement {
                 str1 += engagementTYPE
 		str1 += ') return givenProfile.id as Person1, toProfile.id as Person2, count(toProfile) as count order by givenProfile.id'
 		let resultPromise = session.readTransaction(function(transaction) {
-		let result =  transaction.run(str1)
-			 return result;
-		});
+			return transaction.run(str1)
+		})
 		resultPromise.then(function(result) {
-			session.close();
-			console.log(result.records);
-			callback(null, result.records);
+			session.close()
+			callback(null, result.records)
 		}).catch(function(err) {
-			session.close();
-			console.log(result.error);
+			session.close()
 			callback(errorMessage.neo4jError + err, null)
-		});
+		})
 	}
 }
 	

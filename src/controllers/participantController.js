@@ -1,12 +1,31 @@
 'use strict';
 import Participant from "../models/participantModel"
 var errorMessage = require("../errors.js")
+var logger = require("./logController.js")
+var log = {
+	queryType: 'participant',
+	developerAPI: false,
+	didModifyGraph: false,
+}
 
-exports.fetchAllParticipants = function(req, res) {
+/**
+ * Fetch all particpants from a specifc graph
+ * Send back a liste of nodeIDs and properties of all the particpants in the graph
+ *
+ */
+exports.fetchAllParticipants = function(req, res) {	
+	if (!req.params.graphNAME) {
+		res.send(errorMessage.missingParameter)
+		return	
+	}
+	log.request = req
+	log.timestamp = new Date().getTime()
 	Participant.fetchAllParticipants(req.params.graphNAME,function(err, participantArray) {
 		if (err) {
+			logger.writeErrorLog(log, err)
 			res.send(err)
 		} else {
+			log.cypher = participantArray
 			if (participant && participantArray.length > 0) {
 				let participants = []
 				for (let i = 0; i < participantArray.length; i++) {
@@ -20,16 +39,31 @@ exports.fetchAllParticipants = function(req, res) {
 			} else {
 				res.send(errorMessage.noResults)
 			}
+			logger.writeLog(log)
 		}
 	});
 }
 
+/**
+ * Fetch a participant based on a participant's user id.
+ * Note that this is different than a node's id.
+ * Return node information about the participant 
+ *
+ */
 exports.getByParticipantId = function(req, res) {
+	if (!req.params.graphNAME || !req.params.id) {
+		res.send(errorMessage.missingParameter)
+		return
+	}	
+	
+	log.request = req
+	log.timestamp = new Date().getTime()
 	Participant.fetchParticipantDetails(req.params.graphNAME,req.params.id, function(err, participant) {
 		if (err) {
 			res.send(err)
 		}
 		else {
+			log.cypher = participant
 			if (participant && participant.length == 1) {
 				console.log(participant)
 				let tempObj = {}
@@ -40,6 +74,7 @@ exports.getByParticipantId = function(req, res) {
 			} else {
 				res.send(errorMessage.noResults)
 			}
+			logger.writeLog(log)
 		}
 	});
 }

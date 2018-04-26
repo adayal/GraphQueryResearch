@@ -1,12 +1,17 @@
 'use strict';
 
 var config = require("../../config.js")
-var neo4j = require('neo4j-driver').v1;
-var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
+var neo4j = require('neo4j-driver').v1
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password))
 var errorMessages = require("../errors.js")
 
 export default class Graph {
 	
+	/**
+ 	* Fetch all nodes in a specific graph
+ 	* @param graphName to fetch from
+ 	* @callback(error, result)
+ 	*/
 	static fetchGraph(graphName, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
@@ -22,7 +27,12 @@ export default class Graph {
 			callback(errorMessages.neo4jError + err, null)
 		})
 	}
-
+	
+	/**
+ 	* Fetch a specific node based on the node ID
+ 	* @param nodeID to look for
+ 	* @callback(error, result)
+ 	*/
 	static fetchNode(nodeID, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
@@ -51,7 +61,7 @@ export default class Graph {
 		let resultPromise = session.readTransaction(function(transaction) {
 			let result = transaction.run('MATCH (n) RETURN DISTINCT LABELS (n)')
 			return result;			
-		});
+		})
 		
 		resultPromise.then(function(result) {
 			session.close();
@@ -65,9 +75,10 @@ export default class Graph {
 			} else {
 				callback(false, resultList);
 			}
-		}).catch(function(result) {
-			session.close();
-		});
+		}).catch(function(error) {
+			session.close()
+			callback(errorMessages.neo4jError + error, null)
+		})
 	}
 
 	/**
@@ -111,29 +122,33 @@ export default class Graph {
 		let resultPromise = session.readTransaction(function(transaction) {
 			let result = transaction.run('CALL db.schema()')
 			return result
-		});
-		
+		})	
 		resultPromise.then(function(result) {
 			session.close()
 			callback(null, result)
 				
-		}).catch(function(result) {
+		}).catch(function(error) {
 			session.close()
-			callback(errorMessages.neo4jError + result, null)
+			callback(errorMessages.neo4jError + error, null)
 		});	
 	}
 
-	/*
+	/**
  	* This function is used get all the properties of a label
- 	* @TODO check if label actually exists before running
  	*/
 	static describeLabel(labelName, callback) {
+		//FYI we know the labelName exists since this function is called inside the 'describeGraph' function
+		//in the graphController class
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
 			let result = transaction.run('MATCH(a:' + labelName + ') RETURN keys(a) LIMIT 1')
 			return result
 		});
-		
+		/**
+ 		* Tricky syntax here.
+ 		* 'this' looses scope inside the callback. In order to get the context of 'this'
+ 		* we must bind it to the promise. Alternatively, we can use a => (arrow function)
+ 		*/
 		resultPromise.then(function(result) {
 			session.close()
 			this.describeLabelRelationships(labelName, function (err, relationships) {
@@ -145,14 +160,22 @@ export default class Graph {
 					labelObj.rels = relationships
 					callback(null, labelObj)		
 				}
-			})
-				
+			})		
 		}.bind(this)).catch(function(result) {
 			session.close()
 			callback(errorMessages.neo4jError + result, null)
-		});
+		})
 	}
 
+	/*
+	* Describe the relationships and predicates for objects.
+	* This is different from the 'describeLabel' function, which initially only returns
+	* property keys of a function. 
+	* This function is called inside the 'describeLabel' function.
+	* This function will get all relationships directly connecting the label object to another label object
+	* @param labelName to get the relationships for
+	* @callback function to send the relationship data to
+	*/
 	static describeLabelRelationships(labelName, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
@@ -236,8 +259,8 @@ export default class Graph {
 			} else if (engagementType == "post") {
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
 			} else {
-			//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
-			//unsafe but only exposed to developers 
+				//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
+				//unsafe but only exposed to developers 
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN ID(n)");
 			}
 			return result;
@@ -248,7 +271,7 @@ export default class Graph {
 		}).catch(function(err) {
 			session.close();
 			callback(errorMessages.neo4jError + err, null);
-		});		
+		})	
 	}	
 
 
@@ -284,8 +307,7 @@ export default class Graph {
 			if (!bool) {
 				let session = db.session()
 				let resultPromise = session.readTransaction((transaction) => {
-					let result = transaction.run("CREATE (n:" + labelName + ")");
-					return result
+					return transaction.run("CREATE (n:" + labelName + ")")
 				})
 				resultPromise.then(function(result) {
 					session.close()
@@ -349,7 +371,6 @@ export default class Graph {
 							}
 						}
 						stmt += " CREATE (n)-[:" + relationshipName + "]->(m)"	 
-						console.log(stmt)
 						let session = db.session()
 						let resultPromise = session.readTransaction((transaction) => {
 							let result = transaction.run(stmt);

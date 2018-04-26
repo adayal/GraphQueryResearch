@@ -8,12 +8,20 @@
  *
  */
 
-var neo4j = require('neo4j-driver').v1;
+var neo4j = require('neo4j-driver').v1
 var config = require("../../config.js")
-var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password));
+var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password))
 
 export default class Comparative {
-
+	
+	/**
+	* Compare two graphs bassed on an engagement type and a categorical variable.
+	* @param graphNAME1 name of the first graph
+	* @param graphNAME2 name of the second graph
+	* @param labelName of the categorical variable
+	* @param engagementTYPE of the engagement to look for
+	* @param callback(error, result)
+	*/
 	static compareTwoGraphs(graphNAME1, graphNAME2, labelName, engagementTYPE, callback) {
 		let session = db.session();
 		let str1 = 'Match (n: DIGITAL_OBJECT) Match (n)-[:IS_A]->(eType: '
@@ -33,21 +41,16 @@ export default class Comparative {
 		str1 += ') '
 		str1 += 'return network.name as Network, givenProfile.id as Person, count(n) as engagements'
 
-
-		console.log(str1)
 		let resultPromise = session.readTransaction(function(transaction) {
-		let result =  transaction.run(str1)
-			 return result;
-		});
+			return transaction.run(str1)
+		})
 		resultPromise.then(function(result) {
-			session.close();
-			console.log(result.records);
-			callback(null, result.records);
+			session.close()
+			callback(null, result.records)
 		}).catch(function(result) {
-			session.close();
-			console.log(result.error);
+			session.close()
 			callback(errorMessage.neo4jError + result.error, null)
-		});
+		})
 	}
 }
 	
