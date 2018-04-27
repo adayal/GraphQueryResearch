@@ -12,10 +12,15 @@ export default class Graph {
  	* @param graphName to fetch from
  	* @callback(error, result)
  	*/
-	static fetchGraph(graphName, callback) {
+	static fetchGraph(graphName, isDisplay, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
-			let query = graphName ? "MATCH (n), (m:NETWORK{name:'"+graphName+"'}) WHERE (n)-[:PART_OF]->(m) RETURN n" : "MATCH (n) RETURN (n)"
+			let query = ""
+			if (isDisplay) {
+				query = graphName ? "MATCH path = (n)-[:PART_OF]->(m:NETWORK{name:'" + graphName + "'}) RETURN path LIMIT " + config.bigDataNodeLimit : "MATCH path = (n)-[r]-(m) RETURN path LIMIT " + config.bigDataNodeLimit
+			} else {
+				query = graphName ? "MATCH (n), (m:NETWORK{name:'"+graphName+"'}) WHERE (n)-[:PART_OF]->(m) RETURN n" : "MATCH (n) RETURN (n)"
+			}
 			return transaction.run(query)
 		})
 		

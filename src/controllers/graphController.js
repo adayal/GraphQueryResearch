@@ -13,6 +13,125 @@ const queryType = 'graph'
 
 
 /*
+ * Data follows same format
+ * We assume data is first an array
+ * each element is a 'node' or node-pair
+ * check if [i]._fields[0].segments exists
+ * if it does:
+ * 	segments.start.identity.low (id for first node)
+ * 	segments.start.labels[0] (label for node)
+ * 	segment.start.properties (props for node)
+ * 	
+ * 	[replace 'start' with 'end' for the second node]
+ * 	segment.end...
+ *
+ * 	segments.relationship.start.low (source)
+ * 	segments.relationship.end.low (target)
+ * 	segments.relationship.type (caption)
+ *
+ * Format for D3:
+ * let obj = {
+ * 	comment: 'rand message',
+ * 	nodes: [{
+ * 		id: low
+ * 		caption: mixed
+ * 		properties: properties
+ * 		role: label
+ * 		}, {..},..],
+ * 	edges: [{
+ * 		source: low
+ * 		target: low
+ * 		caption: type
+ * 		},{..},..]
+ * }
+ *
+ * res.send(obj)
+ * 
+ */
+var neo4jToD3 = function(data) {
+	let obj = {
+		nodes: [],
+		edges: []
+	}
+	for (let i = 0; i < data.records.length; i++) {
+		let segments = data.records[i]._fields[0].segments[0]
+		if (segments) {
+
+			let node1 = {}
+			let node2 = {}
+			let edge = {}
+			
+			node1.id = segments.start.identity.low
+			node1.caption = node1.id
+			node1.role = segments.start.labels[0]			
+			
+			node2.id = segments.end.identity.low
+			node2.caption = node2.id
+			node2.role = segments.end.labels[0]
+			
+			edge.source = segments.relationship.start.low
+			edge.target = segments.relationship.end.low
+			edge.caption = segments.relationship.type		
+			
+			if (shouldInsert(node1.id, obj.nodes)) {
+				obj.nodes.push(node1)
+			}
+			
+			if (shouldInsert(node2.id, obj.nodes)) {
+				obj.nodes.push(node2)
+			}
+			obj.edges.push(edge)
+		}
+	}
+	return obj
+}
+
+var neo4jSchemaToD3 = function(data) {
+	let obj = {
+		nodes: [],
+		edges: []
+	}
+	for (let i = 0; i < data.records[0]._fields[0].length; i++) {
+		let segments = data.records[0]._fields[0][i]
+		if (segments) {
+
+			let node1 = {}
+		
+			node1.id = segments.identity.low
+			node1.caption = node1.id
+			node1.role = segments.labels[0]			
+			
+			obj.nodes.push(node1)	
+			
+		}
+	}
+	for (let i = 0; i < data.records[0]._fields[1].length; i++) {
+		let edge = data.records[0]._fields[1][i]
+		if (edge) {
+			let edgeObj = {}
+			
+			edgeObj.source = edge.start.low
+			edgeObj.target = edge.end.low
+			edgeObj.caption = edge.type	
+			
+			obj.edges.push(edgeObj)
+		}
+	}
+	return obj
+}
+
+
+
+var shouldInsert = function(id, nodeArray) {
+	for (let i = 0; i < nodeArray.length; i++) {
+		if (nodeArray[i].id == id) {
+			return false
+		}
+	}
+	return true
+}
+
+/*
  * Fetch all the nodes in a specific graph or all graphs
  *
  */
@@ -24,25 +143,30 @@ exports.fetchGraph = function(req, res) {
 		request: req.query,
 		timestamp: new Date().getTime()	
 	}
-	Graph.fetchGraph(req.query.graphName, function(err, graphArray) {
+	let isDisplay = req.query.isDisplay ? req.query.isDisplay : false
+	Graph.fetchGraph(req.query.graphName, isDisplay, (err, graphArray) => {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
 		} else {
-			log.cypher = graphArray
-			logger.writeLog(log)
-			if (graphArray) {
-				let nodes = []
-				for (let i = 0; i < graphArray.records.length; i++) {
-					let tempObj = {}
-					tempObj.nodeID = graphArray.records[i]._fields[0].identity.low
-					tempObj.label = graphArray.records[i]._fields[0].labels
-					tempObj.properties = graphArray.records[i]._fields[0].properties
-					nodes.push(tempObj)
-				}
-				res.send(nodes)
+			if (isDisplay) {
+				res.send(neo4jToD3(graphArray))
 			} else {
-				res.send(errorMessage.noResults)
+				log.cypher = graphArray
+				logger.writeLog(log)
+				if (graphArray) {
+					let nodes = []
+					for (let i = 0; i < graphArray.records.length; i++) {
+						let tempObj = {}
+						tempObj.nodeID = graphArray.records[i]._fields[0].identity.low
+						tempObj.label = graphArray.records[i]._fields[0].labels
+						tempObj.properties = graphArray.records[i]._fields[0].properties
+						nodes.push(tempObj)
+					}
+					res.send(nodes)
+				} else {
+					res.send(errorMessage.noResults)
+				}
 			}
 		}
 			
@@ -412,6 +536,10 @@ exports.fetchSchema = function(req, res) {
 		timestamp: new Date().getTime()	
 	}
 	Graph.describeGraph(function(err, result) {
+		if (req.query.isDisplay) {
+			res.send(neo4jSchemaToD3(result))
+			return
+		} 
 		/**
  		* Do data processing here	
  		*/	

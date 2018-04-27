@@ -12,5 +12,6 @@ module.exports = {
 	mongourl: "mongodb://localhost:27017",
 	mongodb: "GraphQuery",
 	mongoCollection: "logs",
-	pathToUploadFiles: "./uploadedCSV"
+	pathToUploadFiles: "./uploadedCSV",
+	bigDataNodeLimit: 300
 };
