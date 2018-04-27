@@ -174,10 +174,11 @@ exports.findPropertyValue = function(req, res) {
 		timestamp: new Date().getTime()	
 	}
 	Graph.findPropertyValue(req.query.propertyName, req.query.engagementType, function(err, result) {
+		//console.log(result)
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
-		} else if (results) {
+		} else if (result) {
 			let records = result.records
 			let fields = ["nodeID"]
 			let nodes = []
