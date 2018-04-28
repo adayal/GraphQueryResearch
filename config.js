@@ -6,7 +6,7 @@
 
 module.exports = {
 	username: "neo4j",
-	password: "password",
+	password: "horcruxes1",
 	url: "bolt://localhost",
 	nodePort: 3000,
 	mongourl: "mongodb://localhost:27017",

@@ -36,7 +36,7 @@ export default class Graph {
 	static fetchNode(nodeID, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
-			let query = "MATCH (n) WHERE ID(n) = " + nodeID
+			let query = "MATCH (n) WHERE ID(n) = " + nodeID + " RETURN n";
 			return transaction.run(query)
 		})
 		

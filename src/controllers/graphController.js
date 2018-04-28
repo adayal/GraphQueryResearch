@@ -319,6 +319,8 @@ exports.createNewRelationship = function(req, res) {
 		let label2 = ""
 		let relationshipName = ""
 		csv().fromFile(csvFilePath).on('json',(obj)=> {
+			//console.log(obj)
+			//return
 			/*
  			* IMPORT DATA FROM CSV
  			* FIRST LINE HAVE THE HEADERS
@@ -343,6 +345,7 @@ exports.createNewRelationship = function(req, res) {
 			lineNum++
 			
 		}).on('done', (error)=> {
+			//console.log(error)
 			fs.unlink(csvFilePath, function(err) {
 				if (err) {
 					console.log(err)
@@ -353,6 +356,7 @@ exports.createNewRelationship = function(req, res) {
 				res.send(error)
 			}
 			else {
+				let bulkString = ""
 				for (let i = 0; i < queries.length; i++) {
 					bulkString += queries[i] + ";"
 				}
@@ -361,9 +365,12 @@ exports.createNewRelationship = function(req, res) {
 				for (var i = 0; i < 10; i++)
 					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))	
 				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
+				console.log(absPath)
 				fs.writeFile(absPath, bulkString, function(err) {
-					exec('cypher-shell -u neo4j -p password --format plain < ' + absPath, function(error, stdout, stderr) {
+					console.log(err)
+					exec('cypher-shell -u neo4j -p horcruxes1 --format plain < ' + absPath, function(error, stdout, stderr) {
 						if (error) {
+							console.log(error)
 							logger.writeErrorLog(log, error)	
 						} else {
 							logger.writeLog(log)
