@@ -12,7 +12,6 @@ const {spawn} = require('child_process')
 const exec = require('child_process').exec
 const queryType = 'graph'
 
-
 /*
  * Fetch all the nodes in a specific graph or all graphs
  *
