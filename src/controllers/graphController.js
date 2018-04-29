@@ -3,6 +3,7 @@
 import Graph from "../models/graphModel"
 var logger = require("./logController.js")
 var errorMessage = require("../errors.js")
+var config = require("../../config.js")
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
 const fs = require('fs')
@@ -174,7 +175,6 @@ exports.findPropertyValue = function(req, res) {
 		timestamp: new Date().getTime()	
 	}
 	Graph.findPropertyValue(req.query.propertyName, req.query.engagementType, function(err, result) {
-		//console.log(result)
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
@@ -245,7 +245,7 @@ exports.createNewLabel = function(req, res) {
 			logger.writeErrorLog(log, err)	
 			res.send(err)
 		} else {	
-			res.send(result)
+			res.send(true)
 			logger.writeLog(log)
 		}
 	})
@@ -319,7 +319,11 @@ exports.createNewRelationship = function(req, res) {
 		let label2 = ""
 		let relationshipName = ""
 		csv().fromFile(csvFilePath).on('json',(obj)=> {
-			//console.log(obj)
+			if (!obj.match1) {
+				logger.writeErrorLog(log, errorMessage.missingParamter)
+				res.send(errorMessage.missingParamter)
+				return
+			}
 			//return
 			/*
  			* IMPORT DATA FROM CSV
@@ -331,6 +335,7 @@ exports.createNewRelationship = function(req, res) {
 				if (!obj.label1 || !obj.label2 || !obj.relationshipName) {
 					logger.writeErrorLog(log, errorMessage.missingParamter)
 					res.send(errorMessage.missingParamter)
+					return
 				}
 				label1 = obj.label1
 				label2 = obj.label2
@@ -345,7 +350,6 @@ exports.createNewRelationship = function(req, res) {
 			lineNum++
 			
 		}).on('done', (error)=> {
-			//console.log(error)
 			fs.unlink(csvFilePath, function(err) {
 				if (err) {
 					console.log(err)
@@ -365,12 +369,9 @@ exports.createNewRelationship = function(req, res) {
 				for (var i = 0; i < 10; i++)
 					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))	
 				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
-				console.log(absPath)
 				fs.writeFile(absPath, bulkString, function(err) {
-					console.log(err)
-					exec('cypher-shell -u neo4j -p horcruxes1 --format plain < ' + absPath, function(error, stdout, stderr) {
+					exec('cypher-shell -u ' + config.username + ' -p ' + config.password + ' --format plain < ' + absPath, function(error, stdout, stderr) {
 						if (error) {
-							console.log(error)
 							logger.writeErrorLog(log, error)	
 						} else {
 							logger.writeLog(log)
