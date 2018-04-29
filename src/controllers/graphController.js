@@ -119,11 +119,11 @@ exports.findNode = function(req, res) {
  				* So we look for the ._fields[0].low to get the node ids (for this particular case)
  				*/
 				let records = result.records
-				let fields = ["nodeID"]
+				let fields = ["match1"]
 				let nodes = []
 				for (let i = 0; i < records.length; i++) {
 					let temp = {}
-					temp["nodeID"] = records[i]._fields[0].low
+					temp["match1"] = records[i]._fields[0].low
 					nodes.push(temp) 
 				}
 				const json2csvParser = new json2csv({fields})
@@ -179,11 +179,11 @@ exports.findPropertyValue = function(req, res) {
 			res.send(err)
 		} else if (result) {
 			let records = result.records
-			let fields = ["nodeID"]
+			let fields = ["match1"]
 			let nodes = []
 			for (let i = 0; i < records.length; i++) {
 				let temp = {}
-				temp["nodeID"] = records[i]._fields[0].low
+				temp["match1"] = records[i]._fields[0].low
 				nodes.push(temp) 
 			}
 
