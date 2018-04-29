@@ -78,11 +78,11 @@ CREATE INDEX ON :DIGITAL_OBJECT(uid)
 
 MATCH (p:PROFILE),(d:DIGITAL_OBJECT)
 WHERE toString(p.uid) = toString(d.uid)
-CREATE (p)-[:FROM]->(d)
+CREATE (p)<-[:FROM]-(d)
 
 MATCH (p:PROFILE),(d:DIGITAL_OBJECT)
 WHERE toString(p.uid) = toString(d.wall_owner)
-CREATE (p)-[:TO]->(d)
+CREATE (p)<-[:TO]-(d)
 
 MATCH (d:DIGITAL_OBJECT),(n:DIGITAL_OBJECT)
 WHERE toString(d.id) = toString(n.parentPost) 
