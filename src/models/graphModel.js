@@ -274,8 +274,15 @@ export default class Graph {
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
 			} else {
 				//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
-				//unsafe but only exposed to developers 
-				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN ID(n)");
+				//unsafe but only exposed to developers
+				let stmt = ""
+				if (engagementType == "likes") {
+					stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.verb CONTAINS('like') return ID(n)"
+				} else {
+					stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.body =~ '"+ regex +"' RETURN ID(n)"
+				}
+				console.log(stmt)
+				result = transaction.run(stmt)
 			}
 			return result;
 		});

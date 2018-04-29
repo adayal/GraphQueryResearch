@@ -19,6 +19,7 @@ exports.fetchEngagementDetails = function (req, res) {
 		} else if (!engagementArray) {
 			res.send(errorMessage.noResults)
 		} else {
+		/*	console.log(engagementArray)
 			let listOfEngagements = [];
 			for(let i = 0; i < engagementArray.length; i++) {
 				let tempLabel = {}
@@ -40,8 +41,8 @@ exports.fetchEngagementDetails = function (req, res) {
 						remove(resultList, listOfEngagements[j]);
 					}
 				}
-			}
-			res.send(resultList);
+		*///	}
+			res.send(engagementArray);
 		}	
 	});	
 }
