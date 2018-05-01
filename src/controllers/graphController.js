@@ -3,6 +3,7 @@
 import Graph from "../models/graphModel"
 var logger = require("./logController.js")
 var errorMessage = require("../errors.js")
+var config = require("../../config.js")
 const csv = require('csvtojson')
 const json2csv = require('json2csv').Parser
 const fs = require('fs')
@@ -10,7 +11,6 @@ const path = require('path')
 const {spawn} = require('child_process')
 const exec = require('child_process').exec
 const queryType = 'graph'
-
 
 /*
  * Data follows same format
@@ -243,11 +243,11 @@ exports.findNode = function(req, res) {
  				* So we look for the ._fields[0].low to get the node ids (for this particular case)
  				*/
 				let records = result.records
-				let fields = ["nodeID"]
+				let fields = ["match1"]
 				let nodes = []
 				for (let i = 0; i < records.length; i++) {
 					let temp = {}
-					temp["nodeID"] = records[i]._fields[0].low
+					temp["match1"] = records[i]._fields[0].low
 					nodes.push(temp) 
 				}
 				const json2csvParser = new json2csv({fields})
@@ -301,13 +301,13 @@ exports.findPropertyValue = function(req, res) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
-		} else if (results) {
+		} else if (result) {
 			let records = result.records
-			let fields = ["nodeID"]
+			let fields = ["match1"]
 			let nodes = []
 			for (let i = 0; i < records.length; i++) {
 				let temp = {}
-				temp["nodeID"] = records[i]._fields[0].low
+				temp["match1"] = records[i]._fields[0].low
 				nodes.push(temp) 
 			}
 
@@ -368,7 +368,7 @@ exports.createNewLabel = function(req, res) {
 			logger.writeErrorLog(log, err)	
 			res.send(err)
 		} else {	
-			res.send(result)
+			res.send(true)
 			logger.writeLog(log)
 		}
 	})
@@ -442,6 +442,12 @@ exports.createNewRelationship = function(req, res) {
 		let label2 = ""
 		let relationshipName = ""
 		csv().fromFile(csvFilePath).on('json',(obj)=> {
+			if (!obj.match1) {
+				logger.writeErrorLog(log, errorMessage.missingParamter)
+				res.send(errorMessage.missingParamter)
+				return
+			}
+			//return
 			/*
  			* IMPORT DATA FROM CSV
  			* FIRST LINE HAVE THE HEADERS
@@ -452,6 +458,7 @@ exports.createNewRelationship = function(req, res) {
 				if (!obj.label1 || !obj.label2 || !obj.relationshipName) {
 					logger.writeErrorLog(log, errorMessage.missingParamter)
 					res.send(errorMessage.missingParamter)
+					return
 				}
 				label1 = obj.label1
 				label2 = obj.label2
@@ -476,6 +483,7 @@ exports.createNewRelationship = function(req, res) {
 				res.send(error)
 			}
 			else {
+				let bulkString = ""
 				for (let i = 0; i < queries.length; i++) {
 					bulkString += queries[i] + ";"
 				}
@@ -485,7 +493,7 @@ exports.createNewRelationship = function(req, res) {
 					randFileName += alpha.charAt(Math.floor(Math.random() * alpha.length))	
 				let absPath = path.join(__dirname, '../../' + randFileName + '.txt')
 				fs.writeFile(absPath, bulkString, function(err) {
-					exec('cypher-shell -u neo4j -p password --format plain < ' + absPath, function(error, stdout, stderr) {
+					exec('cypher-shell -u ' + config.username + ' -p ' + config.password + ' --format plain < ' + absPath, function(error, stdout, stderr) {
 						if (error) {
 							logger.writeErrorLog(log, error)	
 						} else {

@@ -41,7 +41,7 @@ export default class Graph {
 	static fetchNode(nodeID, callback) {
 		let session = db.session()
 		let resultPromise = session.readTransaction(function(transaction) {
-			let query = "MATCH (n) WHERE ID(n) = " + nodeID
+			let query = "MATCH (n) WHERE ID(n) = " + nodeID + " RETURN n";
 			return transaction.run(query)
 		})
 		
@@ -90,15 +90,15 @@ export default class Graph {
 	* Data store for regex for each engagement type
 	*/
 	static getRegexForEngagementType(type) {
-		if (type == 'share') 
+		if (type == 'shares') 
 			return '.*\\\\[share author=.*'
-		else if (type == 'assessment')
+		else if (type == 'assessments')
 			return 'I am taking the \\\\[bookmark=.*'
 		else if (type == 'stories')
 			return 'Please read the story.*'
 		else if (type == 'likes')
 			return '.*\\\\[/url\\\\] likes \\\\[url.*'
-		else if (type == 'post')
+		else if (type == 'posts')
 			return true
 		else
 			return null
@@ -205,25 +205,39 @@ export default class Graph {
  	*/
 	static findAnyNode(body, callback) {
 		this.doesTypeObjectExist(body.labelName, function(bool, list) {
+			let didAddReturn = false
 			if (bool) {
 				let session = db.session()
 				let stmt = "MATCH (m:" + body.labelName + ") "
 				if (body.contains && body.propertyName) {
 					if (body.not) {
-						stmt += "WHERE NOT toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') RETURN ID(m)"	
+						stmt += "WHERE NOT toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') "	
 					} else {
-						stmt += "WHERE toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') RETURN ID(m)"	
+						stmt += "WHERE toUpper(m." + body.propertyName.toLowerCase() + ") CONTAINS('" + body.contains.toUpperCase() + "') "	
 					}
 				}
 				else if (body.contains && !body.propertyName) {
 					if (body.not) {
-						stmt += "WHERE (none(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) RETURN ID(m)"
+						stmt += "WHERE (none(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) "
 					} else {
-						stmt += "WHERE (any(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) RETURN ID(m)"
+						stmt += "WHERE (any(prop in keys(m) where toUpper(toString(m[prop])) CONTAINS('" + body.contains.toUpperCase() + "'))) "
 					}
 				} else {
 					stmt += "RETURN ID(m)"
+					didAddReturn = true
 				
+				}
+				if (!didAddReturn) {
+					if (body.returnType) {
+						if (body.returnType == "everything") {
+							stmt += "RETURN (m)"
+						} else {
+							stmt += "RETURN m." + body.returnType
+						}
+					} else {
+						stmt += "RETURN ID(m)"
+						didAddReturn = true	
+					}
 				}
 				let resultPromise = session.readTransaction(function(transaction) {
 					return transaction.run(stmt)
@@ -259,14 +273,21 @@ export default class Graph {
 			}
 			let result = null
 			//share engagement type has an error with the regex provided
-			if (engagementType == "share") {
+			if (engagementType == "shares") {
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return ID(n)")	
-			} else if (engagementType == "post") {
+			} else if (engagementType == "posts") {
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
 			} else {
 				//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
-				//unsafe but only exposed to developers 
-				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n."+ propertySearch +" =~ '"+ regex +"' RETURN ID(n)");
+				//unsafe but only exposed to developers
+				let stmt = ""
+				if (engagementType == "likes") {
+					stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.verb CONTAINS('like') return ID(n)"
+				} else {
+					stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.body =~ '"+ regex +"' RETURN ID(n)"
+				}
+				console.log(stmt)
+				result = transaction.run(stmt)
 			}
 			return result;
 		});

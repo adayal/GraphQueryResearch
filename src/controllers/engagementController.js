@@ -8,16 +8,18 @@ var errorMessage = require("../errors.js")
  */
 exports.fetchEngagementDetails = function (req, res) {
 	let params = req.params
-	if (!paarams.graphNAME || !params.engagementTYPE) {
+	if (!params.graphNAME || !params.engagementTYPE) {
 		res.send(errorMessage.missingParameter)
 		return
 	}
 	Engagement.fetchEngagementDetails(params.graphNAME, params.engagementTYPE, function(err, engagementArray) {	
 		if (err) {
+			console.log(err)
 			res.send(errorMessage.neo4jError)
-		} else if (!engagementAarray) {
+		} else if (!engagementArray) {
 			res.send(errorMessage.noResults)
 		} else {
+		/*	console.log(engagementArray)
 			let listOfEngagements = [];
 			for(let i = 0; i < engagementArray.length; i++) {
 				let tempLabel = {}
@@ -39,8 +41,8 @@ exports.fetchEngagementDetails = function (req, res) {
 						remove(resultList, listOfEngagements[j]);
 					}
 				}
-			}
-			res.send(resultList);
+		*///	}
+			res.send(engagementArray);
 		}	
 	});	
 }

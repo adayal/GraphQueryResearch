@@ -1,0 +1,91 @@
+//This file contains procedures that I (Amit) will run when creating the graph using the csv files.
+
+//user:
+
+LOAD CSV WITH HEADERS FROM "file:///e1r1_user.csv" AS row
+CREATE (n:ACCOUNT)
+SET n = row,
+	n.uid = toInteger(row.uid),
+	n.nickname = row.nickname,
+	n.timezone = row.timezone,
+	n.language = row.language,
+	n.register_date = row.register_date,
+	n.login_date = row.login_date
+
+----------------------------
+
+//profile:
+
+LOAD CSV WITH HEADERS FROM "file:///e1r1_profile.csv" AS row
+CREATE (n:PROFILE)
+SET n = row,
+	n.uid = toInteger(row.uid),
+	n.state = row.region,
+	n.gender = row.gender,
+	n.marital = row.marital,
+	n.political = row.politic,
+	n.likes = row.likes,
+	n.dislikes = row.dislikes,
+	n.about = row.about,
+	n.music = row.music,
+	n.books = row.book,
+	n.tv = row.tv,
+	n.film = row.film
+
+CREATE INDEX ON :ACCOUNT(uid)
+CREATE INDEX ON :PROFILE(uid)
+
+------------------------------
+
+MATCH (a:ACCOUNT),(p:PROFILE)
+WHERE a.uid = p.uid
+CREATE (p)-[:HAS_A]->(a)
+
+------------------------------
+
+item:
+LOAD CSV WITH HEADERS FROM "e1r1_selectedItems.csv" AS row
+CREATE (n:DIGITAL_OBJECT)
+SET n = row,
+	n.id = row.id,
+	n.guid = row.guid,
+	n.uri = row.uri,
+	n.uid = row.uid,
+	n.type = row.type,
+	n.is_wall = row.wall,
+	n.gravitiy = row.gravity,
+	n.parentPost = row.parent,
+	n.created = row.created,
+	n.edited = row.commented,
+	n.received = row.received,
+	n.changed = row.changed,
+	n.wall_owner = row.wall_owner,
+	n.title = row.title,
+	n.body = row.body,
+	n.verb = row.verb,
+	n.file = row.file,
+	n.deleted = row.deleted;
+
+--------------------------------
+//prune remote nodes
+
+MATCH (d {type: 'remote'})
+DETACH DELETE d
+
+CREATE INDEX ON :DIGITAL_OBJECT(uid)
+
+//create relationships for authors and wall owners
+
+MATCH (p:PROFILE),(d:DIGITAL_OBJECT)
+WHERE toString(p.uid) = toString(d.uid)
+CREATE (p)<-[:FROM]-(d)
+
+MATCH (p:PROFILE),(d:DIGITAL_OBJECT)
+WHERE toString(p.uid) = toString(d.wall_owner)
+CREATE (p)<-[:TO]-(d)
+
+MATCH (d:DIGITAL_OBJECT),(n:DIGITAL_OBJECT)
+WHERE toString(d.id) = toString(n.parentPost) 
+CREATE (n)-[:PARENT]->(d)
+
+
