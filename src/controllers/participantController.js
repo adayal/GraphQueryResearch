@@ -20,13 +20,13 @@ exports.fetchAllParticipants = function(req, res) {
 	}
 	log.request = req
 	log.timestamp = new Date().getTime()
-	Participant.fetchAllParticipants(req.params.graphNAME,function(err, participantArray) {
+	Participant.fetchAllParticipants(req.params.graphNAME, function(err, participantArray) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
 		} else {
 			log.cypher = participantArray
-			if (participant && participantArray.length > 0) {
+			if (participantArray) {
 				let participants = []
 				for (let i = 0; i < participantArray.length; i++) {
 					let tempObj = {}
