@@ -44,7 +44,7 @@ CREATE (p)-[:HAS_A]->(a)
 ------------------------------
 
 item:
-LOAD CSV WITH HEADERS FROM "e1r1_selectedItems.csv" AS row
+LOAD CSV WITH HEADERS FROM "file:///e1r1_selectedItems.csv" AS row
 CREATE (n:DIGITAL_OBJECT)
 SET n = row,
 	n.id = row.id,
@@ -88,4 +88,6 @@ MATCH (d:DIGITAL_OBJECT),(n:DIGITAL_OBJECT)
 WHERE toString(d.id) = toString(n.parentPost) 
 CREATE (n)-[:PARENT]->(d)
 
-
+//Create Network
+CREATE (n:NETWORK{name: 'e1r2'})
+MATCH (a:NETWORK), (m) WHERE (a) <> (m) CREATE (m)-[:PART_OF]->(a)
