@@ -11,7 +11,7 @@
 var neo4j = require('neo4j-driver').v1
 var config = require("../../config.js")
 var db = neo4j.driver(config.url, neo4j.auth.basic(config.username, config.password))
-
+var errorMessage = require("../errors.js")
 export default class Comparative {
 	
 	/**
