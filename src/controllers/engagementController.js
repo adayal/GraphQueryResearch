@@ -8,11 +8,11 @@ var errorMessage = require("../errors.js")
  */
 exports.fetchEngagementDetails = function (req, res) {
 	let params = req.params
-	if (!params.graphNAME || !params.engagementTYPE) {
+	if (!params.graphName || !params.engagementType) {
 		res.send(errorMessage.missingParameter)
 		return
 	}
-	Engagement.fetchEngagementDetails(params.graphNAME, params.engagementTYPE, function(err, engagementArray) {	
+	Engagement.fetchEngagementDetails(params.graphName, params.engagementType, function(err, engagementArray) {	
 		if (err) {
 			console.log(err)
 			res.send(errorMessage.neo4jError)
@@ -31,5 +31,3 @@ function remove(array, element) {
     	array.splice(index, 1);
     }
 }
-
-

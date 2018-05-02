@@ -14,13 +14,13 @@ var log = {
  *
  */
 exports.fetchAllParticipants = function(req, res) {	
-	if (!req.params.graphNAME) {
+	if (!req.params.graphName) {
 		res.send(errorMessage.missingParameter)
 		return	
 	}
-	log.request = req
+	log.request = req.params
 	log.timestamp = new Date().getTime()
-	Participant.fetchAllParticipants(req.params.graphNAME, function(err, participantArray) {
+	Participant.fetchAllParticipants(req.params.graphName, function(err, participantArray) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)
@@ -52,21 +52,21 @@ exports.fetchAllParticipants = function(req, res) {
  *
  */
 exports.getByParticipantId = function(req, res) {
-	if (!req.params.graphNAME || !req.params.id) {
+	if (!req.params.graphName || !req.params.id) {
 		res.send(errorMessage.missingParameter)
 		return
 	}	
 	
-	log.request = req
+	log.request = req.params
 	log.timestamp = new Date().getTime()
-	Participant.fetchParticipantDetails(req.params.graphNAME,req.params.id, function(err, participant) {
+	Participant.fetchParticipantDetails(req.params.graphName, req.params.id, function(err, participant) {
 		if (err) {
+			logger.writeErrorLog(log, err)
 			res.send(err)
 		}
 		else {
 			log.cypher = participant
-			if (participant && participant.length == 1) {
-				console.log(participant)
+			if (participant) {
 				let tempObj = {}
 				tempObj.nodeID = participant[0]._fields[0].identity.low
 				tempObj.label = participant[0]._fields[0].labels

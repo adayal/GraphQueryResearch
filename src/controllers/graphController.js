@@ -173,7 +173,7 @@ exports.findPropertyValue = function(req, res) {
 		request: req.query,
 		timestamp: new Date().getTime()	
 	}
-	Graph.findPropertyValue(req.query.propertyName, req.query.engagementType, function(err, result) {
+	Graph.findPropertyValue(req.query.engagementType, function(err, result) {
 		if (err) {
 			logger.writeErrorLog(log, err)
 			res.send(err)

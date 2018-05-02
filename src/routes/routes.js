@@ -1,11 +1,4 @@
 'use strict';
-
-var participantController = require('../controllers/participantController');
-var graphController = require('../controllers/graphController');
-var logController = require('../controllers/logController');
-var engagementController = require('../controllers/engagementController');
-var comparativeController = require('../controllers/comparativeController');
-
 /**
  * Define a route here
  * 
@@ -27,10 +20,17 @@ var comparativeController = require('../controllers/comparativeController');
  */
 
 module.exports = function(app) {
+		
+	var participantController = require('../controllers/participantController');
+	var graphController = require('../controllers/graphController');
+	var logController = require('../controllers/logController');
+	var engagementController = require('../controllers/engagementController');
+	var comparativeController = require('../controllers/comparativeController');
+
 
 	//participant fetching APIs
-	app.route('/:graphNAME/participant').get(participantController.fetchAllParticipants)
-	app.route('/:graphNAME/participant/:id').get(participantController.getByParticipantId)
+	app.route('/:graphName/participant').get(participantController.fetchAllParticipants)
+	app.route('/:graphName/participant/:id').get(participantController.getByParticipantId)
 	
 	//graph interaction APIs
 	app.route('/graph/view').get(graphController.fetchGraph)
@@ -50,6 +50,6 @@ module.exports = function(app) {
 	app.route('/view/log/log').get(logController.findLogLogs)
 	
 	//comparative and engagement APIs	
-	app.route('/:graphNAME/engagement/:engagementTYPE').get(engagementController.fetchEngagementDetails)
-	app.route('/compare/:graphNAME1/:graphNAME2/:labelName/:engagementTYPE').get(comparativeController.compareTwoGraphs)
+	app.route('/:graphName/engagement/:engagementType').get(engagementController.fetchEngagementDetails)
+	app.route('/compare/:graphName1/:graphName2/:labelName/:engagementType').get(comparativeController.compareTwoGraphs)
 }	

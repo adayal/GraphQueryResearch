@@ -257,31 +257,28 @@ export default class Graph {
  	* For each node id, return the following information '<node id>': 'propertyValue'
  	* Return as json
  	*/
-	static findPropertyValue(propertySearch, engagementType, callback) {
+	static findPropertyValue(engagementType, callback) {
 		let session = db.session();
-		
+		let regex = this.getRegexForEngagementType(engagementType);
+		if (!regex) {
+			callback(errorMessage.noResults + ", please use the following engagement types in your query: 'shares, posts, likes, assessments, stores'", null)
+			return null;
+		}	
 		//Arrow function preserves 'this'
 		let resultPromise = session.readTransaction((transaction) => {
-			let regex = this.getRegexForEngagementType(engagementType);
-			if (!regex) {
-				return null;
-			}
+
 			let result = null
 			//share engagement type has an error with the regex provided
 			if (engagementType == "shares") {
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.body contains('[share author=') return ID(n)")	
 			} else if (engagementType == "posts") {
 				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE NOT n.body CONTAINS('[share author=') AND NOT n.body CONTAINS('[/url] likes [url=') AND NOT n.body CONTAINS('Please read the story [bookmark=') AND NOT n.body CONTAINS('I am taking the [bookmark=') return ID(n)")
+			} else if (engagementType == "likes") {
+				result = transaction.run("MATCH (n:DIGITAL_OBJECT) WHERE n.verb CONTAINS('like') return ID(n)")
 			} else {
 				//not allowed to parameterize labels... github.com/neo4j/neo4j/issues/2000 has been open since 2014
-				//unsafe but only exposed to developers
-				let stmt = ""
-				if (engagementType == "likes") {
-					stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.verb CONTAINS('like') return ID(n)"
-				} else {
-					stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.body =~ '"+ regex +"' RETURN ID(n)"
-				}
-				console.log(stmt)
+				//unsafe but only exposed to developers	
+				stmt = "MATCH (n:DIGITAL_OBJECT) WHERE n.body =~ '"+ regex +"' RETURN ID(n)"
 				result = transaction.run(stmt)
 			}
 			return result;

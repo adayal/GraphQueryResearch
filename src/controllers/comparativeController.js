@@ -8,17 +8,17 @@ var errorMessage = require("../errors.js")
  */
 exports.compareTwoGraphs = function (req, res) {
 	let params = req.params
-	if (!params.graphNAME1 || !params.graphNAME2 || !params.labelName || !params.engagementTYPE) {
+	if (!params.graphName1 || !params.graphName2 || !params.labelName || !params.engagementType) {
 		res.send(errorMessage.missingParameter)
 		return
 	}
-	Comparative.compareTwoGraphs(params.graphNAME1, params.graphNAME2, params.labelName, params.engagementTYPE, function(err, comparativeArray) {
+	Comparative.compareTwoGraphs(params.graphName1, params.graphName2, params.labelName, params.engagementType, function(err, comparativeArray) {
 		if (err) {
 			res.send(errorMessage.neo4jError)
 		} else if (!comparativeArray) {
 			res.send(errorMessage.noResults)
 		} else {
-					res.send(comparativeArray);
+			res.send(comparativeArray);
 		}
 	});	
 }
