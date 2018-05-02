@@ -26,7 +26,7 @@ exports.fetchAllParticipants = function(req, res) {
 			res.send(err)
 		} else {
 			log.cypher = participantArray
-			if (participant && participantArray.length > 0) {
+			if (participantArray && participantArray.length > 0) {
 				let participants = []
 				for (let i = 0; i < participantArray.length; i++) {
 					let tempObj = {}
