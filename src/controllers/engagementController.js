@@ -19,29 +19,6 @@ exports.fetchEngagementDetails = function (req, res) {
 		} else if (!engagementArray) {
 			res.send(errorMessage.noResults)
 		} else {
-		/*	console.log(engagementArray)
-			let listOfEngagements = [];
-			for(let i = 0; i < engagementArray.length; i++) {
-				let tempLabel = {}
-				//Grab the data for person one and person two from the javascript
-				tempLabel.personOne = engagementArray[i.toString()]._fields[0]
-				tempLabel.personTwo = engagementArray[i.toString()]._fields[1]
-				tempLabel.engagementsBetween = engagementArray[i.toString()]._fields[2]["low"]
-				//put the object that data is stored into our list
-				listOfEngagements.push(tempLabel)		
-			}
-			//Currently a,b count =! b,a count Need to sum up interactions in a bidirectional way
-			let resultList = listOfEngagements
-			for(let i = 0; i < engagementArray.length; i++) {
-			
-				for(let j = i+1; j < engagementArray.length; j++) {
-					if (listOfEngagements[j] && listOfEngagements[i].personOne == listOfEngagements[j].personTwo && 
-					listOfEngagements[i].personTwo == listOfEngagements[j].personOne) {		
-						resultList[i].engagementsBetween += listOfEngagements[j].engagementsBetween
-						remove(resultList, listOfEngagements[j]);
-					}
-				}
-		*///	}
 			res.send(engagementArray);
 		}	
 	});	
