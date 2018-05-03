@@ -245,7 +245,7 @@ export default class Graph {
 					callback(errorMessages.neo4jError + result, null)
 				})
 			} else {
-				callback(errorMessages.unkownLabel + list, null)
+				callback(errorMessages.unknownLabel + list, null)
 			}
 		})
 	}

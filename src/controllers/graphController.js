@@ -31,7 +31,7 @@ exports.fetchGraph = function(req, res) {
 		} else {
 			log.cypher = graphArray
 			logger.writeLog(log)
-			if (graphArray) {
+			if (graphArray && graphArray.length > 0) {
 				let nodes = []
 				for (let i = 0; i < graphArray.records.length; i++) {
 					let tempObj = {}
@@ -70,7 +70,11 @@ exports.fetchNode = function(req, res) {
 			log.cypher = data
 			logger.writeLog(log)
 			if (data) {
-				res.send(data)
+				let obj = {}
+				obj.nodeID = req.query.nodeID
+				obj.label = data.records[0]._fields[0].labels[0]
+				obj.properties = data.records[0]._fields[0].properties
+				res.send(obj)
 			} else {
 				res.send(errorMessage.noResults)
 			}
@@ -447,8 +451,9 @@ exports.fetchSchema = function(req, res) {
 		let resultList = [];
 		for (let i = 0; i < labelList.length; i++) {
 			let temp = {}
-			temp.objectName = labelList[i].name
+			temp.subjectName = labelList[i].name
 			temp.predicates = []	
+			temp.relationships = []
 			let relationships = result.records[0]._fields[1]
 			Graph.describeLabel(labelList[i].name, function(err, result) {
 				if (err && !result) {
@@ -467,22 +472,32 @@ exports.fetchSchema = function(req, res) {
 					for (let j = 0; j < result.rels.records.length; j++) {
 						if (result.rels.records[j]) {
 							let tempRel = {}
-							tempRel.name = result.rels.records[j]._fields[0][0]
+							tempRel.object = result.rels.records[j]._fields[0][0]
 							tempRel.type = result.rels.records[j]._fields[1]
-							temp.predicates.push(tempRel)
+							temp.relationships.push(tempRel)
 						}
 						//fields[0][0] is the obj
 						//fields[1] is the type
 					}
 					resultList.push(temp)	
 				}
-				//only send the request if you are on the last iteration of the outer-loop
-				if (i == labelList.length - 1) {
-					logger.writeLog(log)
-					res.send(resultList)
-				}
 			})		
 		}
+		//cheating javascript's callback functionality
+		/* [TODO HANDLE THIS LATER]
+		* The problem is that we cannot send a response until all callbacks are completed
+		* This code was written naively and therefore blocks the callback functionality.
+		* Instead of waiting for the callbacks, we make a timeout function and fire the response
+		* after 3 seconds. This is a less than optimal solution but at least the API functions
+		* properly. Unfortunatley this error was caught too late, so we did not have time to fix
+		* it. To fix this error, please use Promise.all() and queue the promises. This requires
+		* a code fix in the controller and in the model.
+		*/
+		setTimeout(function() {
+			logger.writeLog(log)
+			res.send(resultList)
+		}, 3000);
+		
 	})		
 }
 

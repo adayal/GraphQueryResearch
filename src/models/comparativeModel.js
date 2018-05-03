@@ -33,14 +33,13 @@ export default class Comparative {
 		str1 += ') '
 		str1 += 'return network.name as Network, givenProfile.id as Person, count(n) as engagements UNION '
 		str1 += 'Match (n: DIGITAL_OBJECT) Match (n)-[:IS_A]->(eType: '
-		str1 += engagementTYPE
+		str1 += engagementTYPE.toUpperCase()
 		str1 += ") Match (givenProfile: PROFILE)-[:PART_OF]->(network) where network.name = "
 		str1 += "\'"+graphNAME2+"\'"
 		str1 += ' Match (:'
 		str1 += labelName
 		str1 += ') '
 		str1 += 'return network.name as Network, givenProfile.id as Person, count(n) as engagements'
-
 		let resultPromise = session.readTransaction(function(transaction) {
 			return transaction.run(str1)
 		})
